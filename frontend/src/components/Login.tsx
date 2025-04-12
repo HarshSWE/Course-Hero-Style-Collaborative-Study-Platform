@@ -1,3 +1,5 @@
+//Look into JWT Auth for login and sign up
+
 const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

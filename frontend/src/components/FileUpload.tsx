@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import CloseIcon from "@mui/icons-material/Close";
-import Home from "./Home";
+import { useNavigate } from "react-router-dom";
 
 const FileUpload = () => {
+  const navigate = useNavigate();
+
   const [files, setFiles] = useState<
     { url: string; name: string; type: string }[]
   >([]);
@@ -43,9 +45,14 @@ const FileUpload = () => {
         {...getRootProps()}
         className="relative w-[80%] max-w-[1000px] h-[600px] bg-white border-2 border-dashed border-gray-300 rounded-2xl p-12 shadow-lg hover:border-blue-500 transition overflow-y-auto"
       >
-        {/* Close icon which will lead to home page */}
-        <button className="absolute top-4 left-4 text-gray-500 hover:text-gray-700">
-          <CloseIcon />
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate("/");
+          }}
+          className="absolute top-4 left-4 text-gray-500 hover:text-gray-700"
+        >
+          Finish
         </button>
 
         <button
@@ -66,7 +73,8 @@ const FileUpload = () => {
               </p>
             </div>
           ) : (
-            <div className="mt-6 w-full overflow-x-auto flex space-x-4">
+            // Justify start aligns to main axis and items-start perpendicular to main axis
+            <div className="mt-6 w-full flex flex-wrap gap-x-4 gap-y-6 justify-start items-start">
               {files.map((file, index) => (
                 <div
                   key={index}
@@ -98,12 +106,14 @@ const FileUpload = () => {
                         className="text-blue-600 text-sm mt-2 underline"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        Open
+                        Open Image
                       </a>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center">
-                      <div className="text-4xl">📄</div>
+                      <div className="w-[80px] h-[108px] flex items-center justify-center bg-white border rounded text-4xl">
+                        📄
+                      </div>
                       <a
                         href={file.url}
                         target="_blank"

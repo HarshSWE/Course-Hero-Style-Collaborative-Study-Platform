@@ -20,16 +20,16 @@ const Home = () => {
       {/* Top navbar */}
       <div className="w-full bg-white shadow px-6 py-4 flex items-center justify-between">
         {/* Centered Search Bar */}
-        <div className="flex justify-center w-full">
+        <div className="ml-6 flex justify-center w-full">
           <input
             type="text"
             placeholder="Search for Documents..."
-            className="w-full max-w-xl px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="ml-4 w-full max-w-xl px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
 
         {/* Logout aligned to far right */}
-        <button className="ml-4 text-gray-700 font-semibold hover:text-red-600 transition">
+        <button className=" text-gray-700 font-semibold hover:text-red-600 transition">
           Logout
         </button>
       </div>

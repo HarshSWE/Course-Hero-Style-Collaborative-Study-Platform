@@ -5,14 +5,12 @@ import { useNavigate } from "react-router-dom";
 const Home = () => {
   const navigate = useNavigate();
 
-  const [title, setTitle] = useState("Welcome, User");
-
   function handleClickYourNotes() {
-    setTitle("Your Notes");
+    //setTitle("Your Notes");
   }
 
   function handleClickSaved() {
-    setTitle("Saved");
+    //setTitle("Saved");
   }
 
   return (

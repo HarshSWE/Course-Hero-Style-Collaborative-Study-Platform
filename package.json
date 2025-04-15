@@ -1,0 +1,30 @@
+{
+  "name": "full-stack-note-sharing-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon backend/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HarshSWE/Full-Stack-Note-Sharing-App.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/HarshSWE/Full-Stack-Note-Sharing-App/issues"
+  },
+  "homepage": "https://github.com/HarshSWE/Full-Stack-Note-Sharing-App#readme",
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mongoose": "^8.13.2",
+    "multer": "^1.4.5-lts.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

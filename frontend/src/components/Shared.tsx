@@ -95,7 +95,6 @@ const Shared = () => {
         throw new Error("Failed to unshare file");
       }
 
-      // Remove the deleted file from state
       setFiles((prevFiles) =>
         prevFiles.filter((file) => file.filename !== filename)
       );
@@ -134,6 +133,7 @@ const Shared = () => {
               }}
             >
               <div>{getPreview(file)}</div>
+
               <div
                 style={{
                   marginTop: "10px",
@@ -158,6 +158,20 @@ const Shared = () => {
                   {cleanFileName(file.filename)}
                 </a>
               </div>
+
+              {(file.course || file.school) && (
+                <div
+                  style={{
+                    marginTop: "6px",
+                    fontSize: "13px",
+                    color: "#555",
+                    textAlign: "center",
+                  }}
+                >
+                  {file.course && <div>📘 Course: {file.course}</div>}
+                  {file.school && <div>🏫 School: {file.school}</div>}
+                </div>
+              )}
 
               {confirmUnshare === file.filename ? (
                 <div style={{ marginTop: "10px" }}>

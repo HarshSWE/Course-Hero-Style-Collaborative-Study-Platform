@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
 
 type FileUploadProps = {
   inlineMode?: boolean;
@@ -10,23 +12,40 @@ type FileUploadProps = {
 type UploadedFile = {
   file: File;
   serverFilename?: string;
+  course?: string;
+  school?: string;
 };
 
 const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [shared, setShared] = useState(false);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const handleFileChange = (file: File) => {
     setFiles((prev) => [...prev, { file }]);
   };
 
-  const removeFile = async (index: number) => {
+  const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const clearAllFiles = (e: React.MouseEvent) => {
     e.stopPropagation();
     setFiles([]);
+  };
+
+  const toggleExpand = (index: number) => {
+    setExpandedIndex((prev) => (prev === index ? null : index));
+  };
+
+  const handleInputChange = (
+    index: number,
+    field: "course" | "school",
+    value: string
+  ) => {
+    setFiles((prev) =>
+      prev.map((file, i) => (i === index ? { ...file, [field]: value } : file))
+    );
   };
 
   const handleShareClick = async (e: React.MouseEvent) => {
@@ -36,8 +55,10 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
     if (files.length === 0) return;
 
     const formData = new FormData();
-    files.forEach(({ file }) => {
+    files.forEach(({ file, course, school }) => {
       formData.append("files", file);
+      if (course) formData.append("courses", course);
+      if (school) formData.append("schools", school);
     });
 
     const token = localStorage.getItem("token");
@@ -116,37 +137,63 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
             </div>
           ) : (
             <div className="mt-6 w-full flex flex-wrap gap-x-4 gap-y-6 justify-start items-start">
-              {files.map(({ file }, index) => {
+              {files.map(({ file, course, school }, index) => {
                 const fileUrl = URL.createObjectURL(file);
+                const isImage = file.type.startsWith("image/");
+                const isExpanded = expandedIndex === index;
+
                 return (
                   <div
                     key={index}
-                    className="relative flex flex-col items-center bg-gray-50 rounded-lg p-2 shadow text-center min-w-[120px]"
+                    className="relative flex flex-col items-center bg-gray-50 rounded-lg p-4 shadow-md text-center w-[140px] min-h-[220px] overflow-hidden"
                   >
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         removeFile(index);
                       }}
-                      className="absolute -top-2 -right-2 bg-white border rounded-full shadow p-1 hover:text-red-500"
+                      className="absolute top-1 left-1 bg-red-500 text-white w-5 h-5 rounded-full shadow-md hover:bg-red-600 flex items-center justify-center z-10"
+                      title="Delete file"
                     >
-                      <DeleteIcon style={{ fontSize: 14 }} />
+                      <DeleteIcon style={{ fontSize: 12 }} />
                     </button>
 
-                    {file.type.startsWith("image/") ? (
+                    {isExpanded ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpand(index);
+                        }}
+                        className="absolute top-1 right-1 bg-blue-500 text-white w-5 h-5 rounded-full shadow-md hover:bg-blue-600 flex items-center justify-center z-10"
+                        title="Hide details"
+                      >
+                        <RemoveIcon style={{ fontSize: 13 }} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpand(index);
+                        }}
+                        className="absolute top-1 right-1 bg-blue-500 text-white w-5 h-5 rounded-full shadow-md hover:bg-blue-600 flex items-center justify-center z-10"
+                        title="Add details"
+                      >
+                        <AddIcon style={{ fontSize: 13 }} />
+                      </button>
+                    )}
+
+                    {isImage ? (
                       <div className="flex flex-col items-center">
                         <img
                           src={fileUrl}
                           alt={file.name}
                           className="max-w-[100px] h-[100px] object-cover rounded"
-                          onClick={(e) => e.stopPropagation()}
                         />
                         <a
                           href={fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 text-sm mt-2 underline"
-                          onClick={(e) => e.stopPropagation()}
+                          className="text-blue-600 text-sm mt-1 underline"
                         >
                           Open Image
                         </a>
@@ -160,8 +207,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                           href={fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 text-sm underline"
-                          onClick={(e) => e.stopPropagation()}
+                          className="text-blue-600 text-sm mt-1 underline"
                         >
                           Open PDF
                         </a>
@@ -171,6 +217,32 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                     <p className="mt-2 text-xs break-words max-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap">
                       {file.name}
                     </p>
+
+                    {isExpanded && (
+                      <div
+                        className="mt-2 w-full flex flex-col gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="text"
+                          placeholder="Course"
+                          value={course || ""}
+                          onChange={(e) =>
+                            handleInputChange(index, "course", e.target.value)
+                          }
+                          className="text-xs px-2 py-1 border rounded w-full"
+                        />
+                        <input
+                          type="text"
+                          placeholder="School"
+                          value={school || ""}
+                          onChange={(e) =>
+                            handleInputChange(index, "school", e.target.value)
+                          }
+                          className="text-xs px-2 py-1 border rounded w-full"
+                        />
+                      </div>
+                    )}
                   </div>
                 );
               })}

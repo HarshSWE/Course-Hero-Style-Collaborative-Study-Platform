@@ -58,24 +58,58 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.post(
   "/fileupload",
   authenticateUser,
-  upload.array("files"),
+  upload.array("files"), // Handles file upload
   async (req, res) => {
     try {
       const files = req.files;
-      console.log(req.files);
+      const { courses, schools } = req.body; // Retrieve courses and schools from body
+
+      console.log("Courses:", courses);
+      console.log("Schools:", schools);
+
       if (!files || files.length === 0) {
         return res.status(400).send("No files uploaded");
       }
 
+      if (
+        !courses ||
+        !schools ||
+        courses.length !== files.length ||
+        schools.length !== files.length
+      ) {
+        // Ensure that courses and schools arrays match the number of files
+        return res
+          .status(400)
+          .send(
+            "Courses or schools data is missing or does not match the number of files"
+          );
+      }
+
       const savedFiles = [];
 
-      for (const file of files) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
         const { path, filename, originalname } = file;
-        // user._id save works cause that id is in our database
-        const newFile = new fileModel({ path, filename, userId: req.user._id });
+
+        // Add course and school information to the saved file
+        const newFile = new fileModel({
+          path,
+          filename,
+          originalname,
+          userId: req.user._id,
+          course: courses[i], // Attach the corresponding course
+          school: schools[i], // Attach the corresponding school
+        });
+
         await newFile.save();
-        savedFiles.push({ filename, originalname });
+        savedFiles.push({
+          filename,
+          originalname,
+          course: courses[i],
+          school: schools[i],
+        });
       }
+
       console.log(savedFiles);
 
       res.status(200).json({ message: "Files uploaded", files: savedFiles });

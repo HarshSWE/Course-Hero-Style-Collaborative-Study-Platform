@@ -3,6 +3,7 @@ import { Schema, model } from "mongoose";
 const fileSchema = Schema({
   path: { type: String, required: true },
   filename: { type: String, required: true },
+  userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
 });
 
 export const fileModel = model("files", fileSchema);

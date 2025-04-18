@@ -1,9 +1,16 @@
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import React, { useState } from "react";
 import FileUpload from "./FileUpload"; // make sure the path is correct
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const [showFileUpload, setShowFileUpload] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -19,7 +26,10 @@ const Home = () => {
         </div>
 
         {/* Logout aligned to far right */}
-        <button className="text-gray-700 font-semibold hover:text-red-600 transition">
+        <button
+          onClick={handleLogout}
+          className="text-gray-700 font-semibold hover:text-red-600 transition"
+        >
           Logout
         </button>
       </div>
@@ -27,19 +37,34 @@ const Home = () => {
       <div className="flex px-8 py-6">
         {/* Sidebar buttons */}
         <div className="space-y-4 mr-10">
+          {/* Upload to Community */}
           <button
             onClick={() => setShowFileUpload(true)}
-            className="w-28 h-12 bg-white shadow transform -skew-x-6 flex items-center justify-center border border-gray-300 hover:bg-gray-100 transition font-medium"
+            className="w-44 h-12 bg-white shadow transform -skew-x-6 flex items-center justify-center border border-gray-300 hover:bg-blue-100 transition font-medium text-black"
             style={{ transform: "skewX(-12deg)" }}
           >
-            <span className="transform skew-x-12">Shared</span>
+            <span className="transform skew-x-12 flex flex-col items-center leading-tight">
+              <span>Share to</span>
+              <span>Community</span>
+            </span>
           </button>
 
+          {/* Saved */}
           <button
-            className="w-28 h-12 bg-white shadow transform -skew-x-6 flex items-center justify-center border border-gray-300 hover:bg-gray-100 transition font-medium"
+            onClick={() => setShowFileUpload(false)}
+            className="w-44 h-12 bg-white shadow transform -skew-x-6 flex items-center justify-center border border-gray-300 hover:bg-gray-100 transition font-medium"
             style={{ transform: "skewX(-12deg)" }}
           >
             <span className="transform skew-x-12">Saved</span>
+          </button>
+
+          {/* Shared */}
+          <button
+            onClick={() => alert("Shared documents clicked")} // Replace with actual functionality
+            className="w-44 h-12 bg-white shadow transform -skew-x-6 flex items-center justify-center border border-gray-300 hover:bg-gray-100 transition font-medium"
+            style={{ transform: "skewX(-12deg)" }}
+          >
+            <span className="transform skew-x-12">Shared</span>
           </button>
         </div>
 

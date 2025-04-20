@@ -1,26 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// A JWT (JSON Web Token) is like a digital ID card your backend gives you when you log in. You carry it around to prove who you are.
-// "Hey backend, it’s me again — here’s my token to prove I’m logged in."
-// Helpful for user authentication, proves to the app that the person logging in is really that person
-// It's not enough to check if the password entered matches that in the database, because passwords can be stolen
-// so we need to hash them and Once the password matches, how does the app know the user is authenticated on every new page?
-// The solution is jwt, store the jwt that the serve sends back and put it in local storage
-// so Every time the user makes a request, the token is included — this tells the server: “Hey, it’s still me!”
-
 const Login = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // e.target.name is the name attribute of the input
-    // e.target.value is the current value of the input field
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    // prevents default form behaviour which is that when submit is clicked the form reloads
     e.preventDefault();
     try {
       const response = await fetch("http://localhost:5000/login", {
@@ -28,20 +17,13 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        // converts into a string
-        // HTTP requests send data as a string. The body of the request cannot directly contain JavaScript objects (like form) because HTTP bodies are sent as text, not JavaScript objects.
-        // http request is client -> server
-        // body contains data being sent from client to server
-        // can be JSON (commonly used in modern web APIs), Form data (for form submissions), Text, XML, binary data, etc.
+
         body: JSON.stringify(form),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // localStorage is a web API that allows you to store data persistently on the user's browser.
-
-        // these are key value pairs being stored
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         navigate("/");

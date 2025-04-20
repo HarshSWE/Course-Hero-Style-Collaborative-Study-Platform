@@ -48,9 +48,12 @@ const Shared = () => {
           alt={file.filename}
           style={{
             ...previewSize,
+
             objectFit: "cover",
             borderRadius: "8px",
+
             display: "block",
+
             margin: "0 auto",
           }}
         />

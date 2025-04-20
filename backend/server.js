@@ -1,23 +1,17 @@
-// Entry point of the applications backend
 import express from "express";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import { fileModel } from "./models/file.model.js";
-//Multer helps you handle fileuploads
 import multer from "multer";
-// By default the browser will block requests from frontend to backend due to security rules, but this will allow it
 import cors from "cors";
-// Gives you access to the file system on the server, so you can read, write, delete, or move files on the server.
 import fs from "fs";
-// Different operating systems use different path separators, Windows: C:\Users\Harsh\project, macOS/Linux: /Users/Harsh/project
-// This lets my paths work correctly on any os
+
 import path from "path";
-// let's you securely hash passwords, we need to do this because if someone breaks into your database and passwords are stored in plain text, they can instantly read every user's password.
 import bcrypt from "bcrypt";
 import { userModel } from "./models/user.model.js";
-// Json web token for authentication
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { bookmarkModel } from "./models/bookmark.model.js";
 
 import { authenticateUser } from "./middleware/authmiddleware.js";
 
@@ -26,43 +20,32 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Let's you access from .env files
 dotenv.config();
 const app = express();
 app.use(cors());
-// It tells your Express app to automatically parse incoming requests with JSON payloads
 app.use(express.json());
 
-// File storage config
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // Typical node.js callback convention is cb(error, result)
-    // this is saying there is no error
     cb(null, "./backend/uploads");
   },
   filename: function (req, file, cb) {
-    // file.originalname gives you the original name of the file
-    // if someone uploads a file called notes.pdf then file.originalname === "notes.pdf"
     cb(null, Date.now() + "-" + file.originalname);
   },
 });
 
-// tells multer to use the storage I defined above.
 const upload = multer({ storage });
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-// Upload files route
-// "files" is the name attribute in the form input (<input type="file" name="files" multiple />) that allows users to select multiple files to upload.
-// it is a middleware that allows multiple files to be uploaded under the "files" field.
-// middleware runs between the request and response cycle.
+
 app.post(
   "/fileupload",
   authenticateUser,
-  upload.array("files"), // Handles file upload
+  upload.array("files"),
   async (req, res) => {
     try {
       const files = req.files;
-      const { courses, schools } = req.body; // Retrieve courses and schools from body
+      const { courses, schools } = req.body;
 
       console.log("Courses:", courses);
       console.log("Schools:", schools);
@@ -77,7 +60,6 @@ app.post(
         courses.length !== files.length ||
         schools.length !== files.length
       ) {
-        // Ensure that courses and schools arrays match the number of files
         return res
           .status(400)
           .send(
@@ -91,14 +73,13 @@ app.post(
         const file = files[i];
         const { path, filename, originalname } = file;
 
-        // Add course and school information to the saved file
         const newFile = new fileModel({
           path,
           filename,
           originalname,
           userId: req.user._id,
-          course: courses[i], // Attach the corresponding course
-          school: schools[i], // Attach the corresponding school
+          course: courses[i],
+          school: schools[i],
         });
 
         await newFile.save();
@@ -122,7 +103,6 @@ app.post(
 
 app.get("/myfiles", authenticateUser, async (req, res) => {
   try {
-    // returns an array of file documents
     console.log(req.user);
     const userFiles = await fileModel.find({
       userId: new mongoose.Types.ObjectId(req.user._id),
@@ -135,8 +115,6 @@ app.get("/myfiles", authenticateUser, async (req, res) => {
   }
 });
 
-// Delete file
-// Dynamic route where filename is the parameter
 app.delete("/file/:filename", authenticateUser, async (req, res) => {
   try {
     const { filename } = req.params;
@@ -162,23 +140,74 @@ app.delete("/file/:filename", authenticateUser, async (req, res) => {
   }
 });
 
+app.delete("/unbookmark/:fileId", authenticateUser, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const fileId = req.params.fileId;
+
+    console.log("Received unbookmark request");
+    console.log("userId:", userId);
+    console.log("fileId:", fileId);
+
+    if (!userId) {
+      console.log("Unauthorized - userId missing");
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const user = await userModel.findByIdAndUpdate(
+      userId,
+      { $pull: { bookmarks: fileId } },
+      { new: true }
+    );
+
+    if (!user) {
+      console.log("User not found");
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    console.log("Successfully unbookmarked file");
+    return res.status(200).json({ message: "File unbookmarked successfully" });
+  } catch (err) {
+    console.error("Error unbookmarking file:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.get("/search", async (req, res) => {
+  try {
+    const query = req.query.q;
+
+    if (!query) {
+      return res.status(400).json({ message: "Search query missing" });
+    }
+
+    const results = await fileModel.find({
+      $or: [
+        { filename: { $regex: query, $options: "i" } },
+        { course: { $regex: query, $options: "i" } },
+        { school: { $regex: query, $options: "i" } },
+      ],
+    });
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Search Error:", error);
+    res.status(500).json({ message: "Server error during search" });
+  }
+});
+
 app.post("/signup", async (req, res) => {
   try {
-    // req.body in Express refers to the request body of an HTTP request. It contains data sent by the client
-    // When a client submits data (like a form, JSON, or other payload) to the server, that data is sent as the request body.
     const { name, email, password } = req.body;
-    // Searches database for a documnet in this case a user, for the specified email
+
     const existingUser = await userModel.findOne({ email });
     if (existingUser)
       return res.status(400).json({ message: "User already exists" });
 
-    // 10 is number of salt rounds bcrypt will apply to the password,
-    // Salt rounds are the number of times bcrypt will apply the hashing algorithm to the password
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new userModel({ name, email, password: hashedPassword });
     await newUser.save();
 
-    // Create JWT
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
@@ -208,7 +237,6 @@ app.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // Generate token, sign is the method used for it
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
@@ -224,7 +252,35 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// When you go to localhost:5000/
+app.post("/bookmark/:fileId", authenticateUser, async (req, res) => {
+  const { fileId } = req.params;
+  const userId = req.user._id;
+
+  const existing = await bookmarkModel.findOne({ userId, fileId });
+
+  if (existing) {
+    await bookmarkModel.deleteOne({ _id: existing._id });
+    res.status(200).json({ message: "Bookmark removed" });
+  } else {
+    const newBookmark = new bookmarkModel({ userId, fileId });
+    await newBookmark.save();
+    res.status(201).json({ message: "Bookmark added" });
+  }
+});
+
+app.get("/bookmarks", authenticateUser, async (req, res) => {
+  const userId = req.user._id;
+  const bookmarks = await bookmarkModel.find({ userId }).select("fileId");
+  res.status(200).json(bookmarks.map((b) => b.fileId.toString()));
+});
+
+app.get("/bookmarked-files", authenticateUser, async (req, res) => {
+  const userId = req.user._id;
+  const bookmarks = await bookmarkModel.find({ userId }).populate("fileId");
+  const files = bookmarks.map((b) => b.fileId);
+  res.status(200).json(files);
+});
+
 app.get("/", (req, res) => {
   res.send("Server is ready");
 });

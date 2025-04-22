@@ -24,5 +24,9 @@ yarn-error.log*
 node_modules
 
 # ignore contents of uploads folder but keep the folder itself
-uploads/*
-!uploads/.gitkeep
+# Ignore all files in backend/uploads
+backend/uploads/*
+
+# But keep the .gitkeep file in backend/uploads
+!backend/uploads/.gitkeep
+

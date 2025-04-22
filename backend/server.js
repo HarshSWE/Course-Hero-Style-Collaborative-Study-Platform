@@ -152,8 +152,8 @@ app.delete("/file/:filename", authenticateUser, async (req, res) => {
 
 app.delete("/unbookmark/:fileId", authenticateUser, async (req, res) => {
   try {
-    const userId = req.user?.id;
-    const fileId = req.params.fileId;
+    const userId = req.user?.id; // Get the user ID from the authenticated user
+    const fileId = req.params.fileId; // Get the file ID from the request parameters
 
     console.log("Received unbookmark request");
     console.log("userId:", userId);
@@ -164,15 +164,15 @@ app.delete("/unbookmark/:fileId", authenticateUser, async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const user = await userModel.findByIdAndUpdate(
-      userId,
-      { $pull: { bookmarks: fileId } },
-      { new: true }
-    );
+    // Assuming you have a separate collection for bookmarks (bookmarksModel)
+    const deletedBookmark = await bookmarkModel.deleteOne({
+      userId: userId, // Ensure you're deleting the bookmark for the right user
+      fileId: fileId, // Match the fileId to delete the specific bookmark
+    });
 
-    if (!user) {
-      console.log("User not found");
-      return res.status(404).json({ message: "User not found" });
+    if (deletedBookmark.deletedCount === 0) {
+      console.log("Bookmark not found");
+      return res.status(404).json({ message: "Bookmark not found" });
     }
 
     console.log("Successfully unbookmarked file");

@@ -94,9 +94,11 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* makes child elements with equal space between them */}
       <div className="w-full bg-white shadow px-6 py-4 flex items-center justify-between">
         <div
           ref={searchContainerRef}
+          // justify center is for aligns items to main axis, row by default, refers to its children
           className="relative w-full flex justify-center"
         >
           <div className="w-full max-w-xl">

@@ -41,19 +41,29 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.post(
   "/fileupload",
   authenticateUser,
+  // It's a Multer middleware that handles multiple file uploads from a form field named "files".
+
   upload.array("files"),
   async (req, res) => {
     try {
-      const files = req.files;
-      const { courses, schools } = req.body;
+      // Because I am using multer my files are not in req.body.files
+      // Because of upload.array("files") multer puts them in req.files
 
-      console.log("Courses:", courses);
-      console.log("Schools:", schools);
+      const files = req.files;
+      // All the non file fields are in req.body
+      let { courses, schools } = req.body;
+      // one value for courses key is treated as String, multiple treated as Array, the same goes for schools, but not files
+      if (!Array.isArray(courses)) {
+        courses = [courses];
+      }
+      if (!Array.isArray(schools)) {
+        schools = [schools];
+      }
 
       if (!files || files.length === 0) {
         return res.status(400).send("No files uploaded");
       }
-
+      // This makes courses and school fields mandatory, adjust in filemodel later
       if (
         !courses ||
         !schools ||

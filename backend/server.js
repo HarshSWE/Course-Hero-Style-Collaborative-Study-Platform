@@ -278,12 +278,6 @@ app.post("/bookmark/:fileId", authenticateUser, async (req, res) => {
   }
 });
 
-app.get("/bookmarks", authenticateUser, async (req, res) => {
-  const userId = req.user._id;
-  const bookmarks = await bookmarkModel.find({ userId }).select("fileId");
-  res.status(200).json(bookmarks.map((b) => b.fileId.toString()));
-});
-
 app.get("/bookmarked-files", authenticateUser, async (req, res) => {
   const userId = req.user._id;
   const bookmarks = await bookmarkModel.find({ userId }).populate("fileId");

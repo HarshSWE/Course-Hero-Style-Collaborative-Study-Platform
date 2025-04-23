@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DeleteIcon from "@mui/icons-material/Delete";
+import IconButton from "@mui/material/IconButton";
 import AddIcon from "@mui/icons-material/Add";
+import { motion, AnimatePresence } from "framer-motion";
 
 type FileUploadProps = {
   inlineMode?: boolean;
@@ -48,7 +50,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
   };
 
   const handleShareClick = async (e: React.MouseEvent) => {
-    setShared(true);
     e.stopPropagation();
 
     if (files.length === 0) return;
@@ -124,11 +125,21 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
           Clear All
         </button>
 
-        {shared && (
-          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-green-100 text-green-800 px-4 py-2 rounded shadow">
-            Files Successfully Shared!
-          </div>
-        )}
+        <AnimatePresence>
+          {shared && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="absolute top-6 left-[38%] z-60"
+            >
+              <div className="bg-green-100 text-green-800 px-4 py-2 rounded shadow">
+                Files Successfully Shared!
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* flex-col: sets the main axis to vertical, so children stack top-to-bottom instead of side-by-side (which is the default flex-row). */}
         <div className="w-full h-full flex flex-col items-center justify-start text-center">
           {files.length === 0 ? (
@@ -155,7 +166,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                     className="relative flex flex-col items-center bg-gray-50 rounded-lg p-4 shadow-md text-center w-[140px] min-h-[220px] overflow-hidden"
                   >
                     {/* Delete Button - Top Left */}
-                    <button
+                    <IconButton
                       onClick={(e) => {
                         e.stopPropagation();
                         removeFile(index);
@@ -164,22 +175,22 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                       title="Delete file"
                     >
                       <DeleteIcon style={{ fontSize: 12 }} />
-                    </button>
+                    </IconButton>
 
                     {/* Add Button - Top Right */}
-                    <button
+                    <IconButton
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleExpand(index);
                       }}
-                      className="absolute top-1 right-1 bg-green-500 text-white w-5 h-5 rounded-full shadow-md hover:bg-blue-600 flex items-center justify-center z-10"
+                      className="absolute top-1 right-1 bg-blue-500 text-white w-5 h-5 rounded-full shadow-md hover:bg-blue-600 flex items-center justify-center z-10"
                       title="Add details"
                     >
                       <AddIcon style={{ fontSize: 13 }} />
-                    </button>
+                    </IconButton>
 
                     {isImage ? (
-                      <div className="flex flex-col items-center">
+                      <div className="flex flex-col items-center pt-6">
                         <img
                           src={fileUrl}
                           alt={file.name}
@@ -195,7 +206,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                         </a>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center">
+                      <div className="flex flex-col items-center justify-center pt-6">
                         <div className="w-[80px] h-[108px] flex items-center justify-center bg-white border rounded text-4xl">
                           📄
                         </div>

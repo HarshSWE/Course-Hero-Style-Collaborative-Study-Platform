@@ -17,6 +17,25 @@ const Home = () => {
     new Set()
   );
 
+  useEffect(() => {
+    const fetchBookmarkedFileIds = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/bookmarked-files", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await res.json();
+        const ids = data.map((file: any) => file._id);
+        setBookmarkedFiles(new Set(ids));
+      } catch (err) {
+        console.error("Error fetching bookmarks:", err);
+      }
+    };
+
+    fetchBookmarkedFileIds();
+  }, []);
+
   const navigate = useNavigate();
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
@@ -72,9 +91,15 @@ const Home = () => {
   }, []);
 
   const toggleBookmark = async (fileId: string) => {
+    const isBookmarked = bookmarkedFiles.has(fileId);
+    const url = isBookmarked
+      ? `http://localhost:5000/unbookmark/${fileId}`
+      : `http://localhost:5000/bookmark/${fileId}`;
+    const method = isBookmarked ? "DELETE" : "POST";
+
     try {
-      const res = await fetch(`http://localhost:5000/bookmark/${fileId}`, {
-        method: "POST",
+      const res = await fetch(url, {
+        method,
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -84,7 +109,7 @@ const Home = () => {
 
       setBookmarkedFiles((prev) => {
         const newSet = new Set(prev);
-        newSet.has(fileId) ? newSet.delete(fileId) : newSet.add(fileId);
+        isBookmarked ? newSet.delete(fileId) : newSet.add(fileId);
         return newSet;
       });
     } catch (error) {
@@ -110,7 +135,7 @@ const Home = () => {
               className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
             {showDropdown && searchResults.length > 0 && (
-              <div className="absolute left-1/2 transform -translate-x-1/2 mt-1 w-full max-w-xl bg-white border border-gray-300 rounded-md shadow-lg z-10">
+              <div className="absolute left-1/2 transform -translate-x-1/2 mt-1 w-full max-w-xl bg-white border border-gray-300 rounded-md shadow-lg z-50">
                 {searchResults.map((file: any) => {
                   const fileName = file.filename.split("-").slice(-1).join("-");
                   return (

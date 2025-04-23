@@ -1,235 +1,180 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import DeleteIcon from "@mui/icons-material/Delete";
+import IconButton from "@mui/material/IconButton";
+import { PhotoProvider, PhotoView } from "react-photo-view";
+
+interface File {
+  _id: string;
+  filename: string;
+  originalname?: string;
+  course?: string;
+  school?: string;
+}
 
 const Shared = () => {
-  const [files, setFiles] = useState<any[]>([]);
-  const [confirmUnshare, setConfirmUnshare] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileToDelete, setFileToDelete] = useState<File | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [dontAskAgain, setDontAskAgain] = useState(
+    sessionStorage.getItem("dontAskAgain") === "true"
+  );
 
   useEffect(() => {
     const fetchFiles = async () => {
       try {
         const token = localStorage.getItem("token");
-
-        const response = await fetch("http://localhost:5000/myfiles", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const res = await fetch("http://localhost:5000/myfiles", {
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch files");
-        }
-
-        const data = await response.json();
+        if (!res.ok) throw new Error("Failed to fetch files");
+        const data = await res.json();
         setFiles(data);
-        console.log("Fetched files:", data);
-      } catch (error) {
-        console.error("Error fetching files:", error);
+      } catch (err) {
+        console.error("Error fetching files:", err);
       }
     };
 
     fetchFiles();
   }, []);
 
-  const getPreview = (file: any) => {
-    const fileExtension = file.filename.split(".").pop()?.toLowerCase();
-    const previewSize = {
-      width: "150px",
-      height: "150px",
-    };
-
-    if (
-      fileExtension === "png" ||
-      fileExtension === "jpg" ||
-      fileExtension === "jpeg"
-    ) {
-      return (
-        <img
-          src={`http://localhost:5000/uploads/${file.filename}`}
-          alt={file.filename}
-          style={{
-            ...previewSize,
-
-            objectFit: "cover",
-            borderRadius: "8px",
-
-            display: "block",
-
-            margin: "0 auto",
-          }}
-        />
-      );
-    }
-
-    if (fileExtension === "pdf") {
-      return (
-        <iframe
-          src={`http://localhost:5000/uploads/${file.filename}`}
-          width={previewSize.width}
-          height={previewSize.height}
-          title={file.filename}
-          style={{
-            borderRadius: "8px",
-            display: "block",
-            margin: "0 auto",
-          }}
-        />
-      );
-    }
-
-    return <p>{file.filename}</p>;
-  };
-
-  const cleanFileName = (filename: string) => {
-    return filename.replace(/^\d+-/, "");
-  };
-
-  const handleUnshare = async (filename: string) => {
+  const deleteFile = async (file: File) => {
     try {
       const token = localStorage.getItem("token");
-
-      const response = await fetch(`http://localhost:5000/file/${filename}`, {
+      const res = await fetch(`http://localhost:5000/file/${file.filename}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) throw new Error("Failed to delete");
 
-      if (!response.ok) {
-        throw new Error("Failed to unshare file");
-      }
-
-      setFiles((prevFiles) =>
-        prevFiles.filter((file) => file.filename !== filename)
-      );
-      setConfirmUnshare(null);
-    } catch (error) {
-      console.error("Error unsharing file:", error);
+      setFiles((prev) => prev.filter((f) => f._id !== file._id));
+    } catch (err) {
+      console.error("Error deleting file:", err);
     }
   };
 
+  const handleDeleteClick = (file: File) => {
+    if (dontAskAgain) {
+      deleteFile(file);
+    } else {
+      setFileToDelete(file);
+      setShowModal(true);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (fileToDelete) {
+      deleteFile(fileToDelete);
+      setFileToDelete(null);
+      setShowModal(false);
+    }
+  };
+
+  const handleDontAskAgain = () => {
+    sessionStorage.setItem("dontAskAgain", "true");
+    setDontAskAgain(true);
+    handleConfirmDelete();
+  };
+
+  const cleanFileName = (filename: string) => filename.replace(/^\d+-/, "");
+
+  if (files.length === 0) {
+    return <div className="text-center p-4">No files publicly shared yet.</div>;
+  }
+
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-          gap: "20px",
-          padding: "10px 0",
-        }}
-      >
-        {files.length === 0 ? (
-          <p>No files publicly shared yet.</p>
-        ) : (
-          files.map((file) => (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">Shared</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {files.map((file) => {
+          const fileUrl = `http://localhost:5000/uploads/${file.filename}`;
+          const ext = file.filename.split(".").pop()?.toLowerCase();
+
+          return (
             <div
               key={file._id}
-              style={{
-                backgroundColor: "#f9f9f9",
-                borderRadius: "8px",
-                padding: "10px",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                textAlign: "center",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              className="relative border border-gray-300 rounded-lg shadow hover:shadow-lg transition cursor-pointer hover:border-black"
             >
-              <div>{getPreview(file)}</div>
-
-              <div
-                style={{
-                  marginTop: "10px",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  maxWidth: "150px",
-                  fontWeight: "bold",
-                  color: "#007BFF",
-                  textAlign: "center",
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteClick(file);
                 }}
+                className="absolute top-2 right-2 text-red-500 hover:text-red-600"
+                size="small"
               >
-                <a
-                  href={`http://localhost:5000/uploads/${file.filename}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: "#007BFF",
-                    textDecoration: "none",
-                  }}
-                >
-                  {cleanFileName(file.filename)}
-                </a>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+
+              <div className="p-4">
+                <p className="text-sm text-black-500">
+                  {file.originalname ?? cleanFileName(file.filename)}
+                </p>
+                <p className="text-sm text-black-500">
+                  {file.course} · {file.school}
+                </p>
               </div>
 
-              {(file.course || file.school) && (
-                <div
-                  style={{
-                    marginTop: "6px",
-                    fontSize: "13px",
-                    color: "#555",
-                    textAlign: "center",
-                  }}
-                >
-                  {file.course && <div>📘 Course: {file.course}</div>}
-                  {file.school && <div>🏫 School: {file.school}</div>}
-                </div>
-              )}
-
-              {confirmUnshare === file.filename ? (
-                <div style={{ marginTop: "10px" }}>
-                  <p style={{ marginBottom: "8px" }}>
-                    Are you sure you want to delete this file?
-                  </p>
-                  <button
-                    onClick={() => handleUnshare(file.filename)}
-                    style={{
-                      marginRight: "10px",
-                      padding: "6px 12px",
-                      backgroundColor: "#dc3545",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Yes
-                  </button>
-                  <button
-                    onClick={() => setConfirmUnshare(null)}
-                    style={{
-                      padding: "6px 12px",
-                      backgroundColor: "#6c757d",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    No
-                  </button>
-                </div>
+              {ext === "pdf" ? (
+                <iframe
+                  src={fileUrl}
+                  title={file.filename}
+                  className="w-11/12 h-64 object-contain border-t mx-auto"
+                />
+              ) : ext?.match(/(jpg|jpeg|png|gif)/i) ? (
+                <PhotoProvider>
+                  <PhotoView src={fileUrl}>
+                    <div>
+                      <img src={fileUrl} alt={file.filename} />
+                    </div>
+                  </PhotoView>
+                </PhotoProvider>
               ) : (
-                <button
-                  onClick={() => setConfirmUnshare(file.filename)}
-                  style={{
-                    marginTop: "10px",
-                    padding: "6px 12px",
-                    backgroundColor: "#dc3545",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                  }}
-                >
-                  Unshare File
-                </button>
+                <div className="p-4 text-gray-500 text-sm border-t">
+                  No preview available for this file type
+                </div>
               )}
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
+
+      {/* Modal */}
+      {showModal && fileToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm text-center space-y-4">
+            <p className="text-lg font-semibold">
+              Are you sure you want to unshare{" "}
+              <span className="text-black-600 font-bold">
+                {cleanFileName(fileToDelete.filename)}
+              </span>
+              ?
+            </p>
+            <div className="flex justify-between gap-3 mt-4">
+              <button
+                onClick={handleConfirmDelete}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg w-full"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setFileToDelete(null);
+                }}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg w-full"
+              >
+                No
+              </button>
+            </div>
+            <button
+              onClick={handleDontAskAgain}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Don’t ask again
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

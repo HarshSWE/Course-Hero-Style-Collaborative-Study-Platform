@@ -18,6 +18,7 @@ const Shared = () => {
   const [dontAskAgain, setDontAskAgain] = useState(
     sessionStorage.getItem("dontAskAgain") === "true"
   );
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -77,15 +78,34 @@ const Shared = () => {
 
   const cleanFileName = (filename: string) => filename.replace(/^\d+-/, "");
 
+  const filteredFiles = files.filter((file) => {
+    const name = file?.originalname?.toLowerCase() || "";
+    const filename = file?.filename?.toLowerCase() || "";
+    return (
+      name.includes(searchTerm.toLowerCase()) ||
+      filename.includes(searchTerm.toLowerCase())
+    );
+  });
+
   if (files.length === 0) {
     return <div className="text-center p-4">No files publicly shared yet.</div>;
   }
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Shared</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Shared</h2>
+        <input
+          type="text"
+          placeholder="Search files..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-1 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-black"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {files.map((file) => {
+        {filteredFiles.map((file) => {
           const fileUrl = `http://localhost:5000/uploads/${file.filename}`;
           const ext = file.filename.split(".").pop()?.toLowerCase();
 
@@ -118,7 +138,7 @@ const Shared = () => {
                 <iframe
                   src={fileUrl}
                   title={file.filename}
-                  className="w-11/12 h-64 object-contain border-t mx-auto"
+                  className="w-11/12 h-80 object-contain border-t mx-auto"
                 />
               ) : ext?.match(/(jpg|jpeg|png|gif)/i) ? (
                 <PhotoProvider>
@@ -138,7 +158,6 @@ const Shared = () => {
         })}
       </div>
 
-      {/* Modal */}
       {showModal && fileToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm text-center space-y-4">

@@ -205,6 +205,8 @@ const Home = () => {
 
       {isModalOpen && selectedFile && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          {/* relative is the ref point for its absolutely referenced children */}
+          {/* if relative was not it will be positioned to the nearest ancestor that has relative, absolute, or fixed */}
           <div className="bg-white p-6 rounded-lg w-full max-w-5xl h-[90vh] relative flex flex-col">
             <button
               onClick={() => toggleBookmark(selectedFile._id)}
@@ -240,11 +242,17 @@ const Home = () => {
             ) : selectedFile.filename
                 .toLowerCase()
                 .match(/\.(jpg|jpeg|png|gif)$/) ? (
-              <img
-                src={`http://localhost:5000/uploads/${selectedFile.filename}`}
-                alt="Uploaded file"
-                className="w-full max-h-full object-contain"
-              />
+              <div className="flex-1 flex items-center justify-center mt-[-20px]">
+                <img
+                  src={`http://localhost:5000/uploads/${selectedFile.filename}`}
+                  alt="Uploaded file"
+                  className="object-contain"
+                  style={{
+                    maxHeight: "80vh",
+                    maxWidth: "100%",
+                  }}
+                />
+              </div>
             ) : (
               <p>Preview not available for this file type.</p>
             )}

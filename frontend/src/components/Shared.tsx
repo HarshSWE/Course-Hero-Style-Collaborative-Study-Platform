@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 import { PhotoProvider, PhotoView } from "react-photo-view";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 interface File {
   _id: string;
@@ -159,40 +160,17 @@ const Shared = () => {
       </div>
 
       {showModal && fileToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm text-center space-y-4">
-            <p className="text-lg font-semibold">
-              Are you sure you want to unshare{" "}
-              <span className="text-black-600 font-bold">
-                {cleanFileName(fileToDelete.filename)}
-              </span>
-              ?
-            </p>
-            <div className="flex justify-between gap-3 mt-4">
-              <button
-                onClick={handleConfirmDelete}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg w-full"
-              >
-                Yes
-              </button>
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setFileToDelete(null);
-                }}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg w-full"
-              >
-                No
-              </button>
-            </div>
-            <button
-              onClick={handleDontAskAgain}
-              className="text-sm text-blue-600 hover:underline"
-            >
-              Don’t ask again
-            </button>
-          </div>
-        </div>
+        <ConfirmDeleteModal
+          isOpen={showModal && !!fileToDelete}
+          filename={fileToDelete?.filename}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            setShowModal(false);
+            setFileToDelete(null);
+          }}
+          onDontAskAgain={handleDontAskAgain}
+          itemType="unshare"
+        />
       )}
     </div>
   );

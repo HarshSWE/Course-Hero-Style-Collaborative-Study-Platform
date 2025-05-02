@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
+import InsertCommentIcon from "@mui/icons-material/InsertComment";
+import CommentsModal from "./CommentsModal";
 
 interface File {
   _id: string;
-  filename: string;
   originalname?: string;
+  filename: string;
   course?: string;
   school?: string;
 }
@@ -20,6 +22,8 @@ const Shared = () => {
     sessionStorage.getItem("dontAskAgain") === "true"
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -33,11 +37,17 @@ const Shared = () => {
         setFiles(data);
       } catch (err) {
         console.error("Error fetching files:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchFiles();
   }, []);
+
+  const handleCommentClick = (file: File) => {
+    setSelectedFile(file);
+  };
 
   const deleteFile = async (file: File) => {
     try {
@@ -88,6 +98,9 @@ const Shared = () => {
     );
   });
 
+  if (loading)
+    return <div className="text-center p-4">Loading saved files...</div>;
+
   if (files.length === 0) {
     return <div className="text-center p-4">No files publicly shared yet.</div>;
   }
@@ -115,6 +128,11 @@ const Shared = () => {
               key={file._id}
               className="relative border border-gray-300 rounded-lg shadow hover:shadow-lg transition cursor-pointer hover:border-black"
             >
+              <InsertCommentIcon
+                fontSize="small"
+                onClick={() => handleCommentClick(file)}
+                className="absolute top-2 left-1/2 transform -translate-x-1/2 text-blue-500 cursor-pointer hover:text-blue-600"
+              />
               <IconButton
                 onClick={(e) => {
                   e.stopPropagation();
@@ -171,6 +189,18 @@ const Shared = () => {
           onDontAskAgain={handleDontAskAgain}
           itemType="unshare"
         />
+      )}
+
+      {selectedFile && (
+        <>
+          {/* 1745438903202-MAT344 Goals.png */}
+          {console.log(selectedFile.filename)}
+          <CommentsModal
+            isOpen={true}
+            onClose={() => setSelectedFile(null)}
+            fileURL={`http://localhost:5000/uploads/${selectedFile.filename}`}
+          />
+        </>
       )}
     </div>
   );

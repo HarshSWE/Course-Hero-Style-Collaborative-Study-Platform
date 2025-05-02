@@ -15,6 +15,7 @@ import { bookmarkModel } from "./models/bookmark.model.js";
 
 import { authenticateUser } from "./middleware/authmiddleware.js";
 
+import { commentModel } from "./models/comment.model.js";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -218,9 +219,13 @@ app.post("/signup", async (req, res) => {
     const newUser = new userModel({ name, email, password: hashedPassword });
     await newUser.save();
 
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = jwt.sign(
+      { id: newUser._id, name: newUser.name },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
 
     res.status(200).json({
       message: "User created successfully",
@@ -247,9 +252,13 @@ app.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = jwt.sign(
+      { id: user._id, name: user.name },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
 
     res.status(200).json({
       message: "Login successful",
@@ -284,6 +293,126 @@ app.get("/bookmarked-files", authenticateUser, async (req, res) => {
   const files = bookmarks.map((b) => b.fileId);
   res.status(200).json(files);
 });
+
+// This route works
+app.get("/file-id/:filename", async (req, res) => {
+  try {
+    const { filename } = req.params;
+
+    const file = await fileModel.findOne({ filename });
+
+    if (!file) {
+      return res.status(404).json({ message: "File not found." });
+    }
+
+    res.json({ fileId: file._id });
+  } catch (error) {
+    console.error("Error fetching file ID:", error);
+    res.status(500).json({ message: "Server error while fetching file ID." });
+  }
+});
+
+app.post("/comment", async (req, res) => {
+  try {
+    const { fileId, userId, parentId, content } = req.body;
+
+    // Validate required fields
+    if (!fileId || !userId || !content) {
+      return res.status(400).json({
+        message: "fileId, userId, and content are required.",
+      });
+    }
+
+    // Create new comment document
+    const newComment = await commentModel.create({
+      fileId,
+      userId,
+      parentId: parentId || null,
+      content,
+    });
+
+    res.status(201).json(newComment);
+  } catch (error) {
+    console.error("Error saving comment:", error);
+    res.status(500).json({ message: "Server error while saving comment." });
+  }
+});
+
+app.delete("/comment/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Update the comment to set "deleted" to true
+    const updatedComment = await commentModel.findByIdAndUpdate(
+      id,
+      { deleted: true },
+      { new: true } // Return the updated comment
+    );
+
+    if (!updatedComment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    res.json(updatedComment); // Return the updated comment with deleted status
+  } catch (err) {
+    console.error("Error deleting comment:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.put("/comment/:id", async (req, res) => {
+  try {
+    const { id } = req.params; // Get the comment ID from the URL
+    const { content, parentId } = req.body; // Get the updated content and optional parentId from the body
+
+    // Validate the input
+    if (!content) {
+      return res.status(400).json({ message: "Content is required." });
+    }
+
+    // Find the comment by ID and update it
+    const updatedComment = await commentModel.findByIdAndUpdate(
+      id,
+      { content, parentId: parentId || null }, // Update content and optionally parentId
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedComment) {
+      return res.status(404).json({ message: "Comment not found." });
+    }
+
+    res.status(200).json(updatedComment); // Respond with the updated comment
+  } catch (error) {
+    console.error("Error updating comment:", error);
+    res.status(500).json({ message: "Server error while updating comment." });
+  }
+});
+app.get("/all-comments", async (req, res) => {
+  const { fileId } = req.query; // Get fileId from query parameters
+
+  if (!fileId) {
+    return res.status(400).json({ message: "fileId is required." });
+  }
+
+  try {
+    // Find comments that match the fileId
+    const comments = await commentModel
+      .find({ fileId }) // Use the fileId to filter comments
+      .sort({ createdAt: 1 }); // Sort comments by creation date (ascending)
+
+    if (comments.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No comments found for this fileId." });
+    }
+
+    res.json(comments);
+  } catch (err) {
+    console.error("Error fetching comments:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+// gets all comments as needed
 
 app.get("/", (req, res) => {
   res.send("Server is ready");

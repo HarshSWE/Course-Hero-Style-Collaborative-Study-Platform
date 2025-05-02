@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { userModel } from "../models/user.model.js";
-
+// You use this middleware on any route that requires the user to be authenticated (logged in) before they can access the route.
 export const authenticateUser = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;

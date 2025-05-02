@@ -5,6 +5,8 @@ import debounce from "lodash.debounce";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookmark } from "@fortawesome/free-solid-svg-icons";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
+import InsertCommentIcon from "@mui/icons-material/InsertComment";
+import CommentsModal from "./CommentsModal";
 
 const Home = () => {
   const [showFileUpload, setShowFileUpload] = useState(false);
@@ -16,6 +18,15 @@ const Home = () => {
   const [bookmarkedFiles, setBookmarkedFiles] = useState<Set<string>>(
     new Set()
   );
+  const [showComments, setShowComments] = useState(false);
+
+  const navigate = useNavigate();
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
 
   useEffect(() => {
     const fetchBookmarkedFileIds = async () => {
@@ -35,14 +46,6 @@ const Home = () => {
 
     fetchBookmarkedFileIds();
   }, []);
-
-  const navigate = useNavigate();
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
 
   const debouncedSearch = useRef(
     debounce(async (term: string) => {
@@ -119,11 +122,9 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* makes child elements with equal space between them */}
       <div className="w-full bg-white shadow px-6 py-4 flex items-center justify-between">
         <div
           ref={searchContainerRef}
-          // justify center is for aligns items to main axis, row by default, refers to its children
           className="relative w-full flex justify-center"
         >
           <div className="w-full max-w-xl">
@@ -205,9 +206,8 @@ const Home = () => {
 
       {isModalOpen && selectedFile && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          {/* relative is the ref point for its absolutely referenced children */}
-          {/* if relative was not it will be positioned to the nearest ancestor that has relative, absolute, or fixed */}
           <div className="bg-white p-6 rounded-lg w-full max-w-5xl h-[90vh] relative flex flex-col">
+            {/* Bookmark Button */}
             <button
               onClick={() => toggleBookmark(selectedFile._id)}
               className="absolute top-2 left-2 text-2xl text-blue-500"
@@ -220,6 +220,16 @@ const Home = () => {
               )}
             </button>
 
+            {/* Comments Button */}
+            <button
+              onClick={() => setShowComments(true)}
+              className="absolute top-2 left-1/2 transform -translate-x-1/2 text-blue-500"
+              title="View Comments"
+            >
+              <InsertCommentIcon fontSize="large" />
+            </button>
+
+            {/* Close Modal Button */}
             <button
               onClick={() => setIsModalOpen(false)}
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl"
@@ -233,29 +243,37 @@ const Home = () => {
               </h2>
             </div>
 
-            {selectedFile.filename.toLowerCase().endsWith(".pdf") ? (
-              <iframe
-                src={`http://localhost:5000/uploads/${selectedFile.filename}`}
-                className="w-full flex-1"
-                title="PDF Preview"
-              />
-            ) : selectedFile.filename
-                .toLowerCase()
-                .match(/\.(jpg|jpeg|png|gif)$/) ? (
-              <div className="flex-1 flex items-center justify-center mt-[-20px]">
-                <img
+            {/* File preview and CommentSection overlay */}
+            <div className="relative flex-1 overflow-hidden">
+              {selectedFile.filename.toLowerCase().endsWith(".pdf") ? (
+                <iframe
                   src={`http://localhost:5000/uploads/${selectedFile.filename}`}
-                  alt="Uploaded file"
-                  className="object-contain"
-                  style={{
-                    maxHeight: "80vh",
-                    maxWidth: "100%",
-                  }}
+                  className="w-full h-full"
+                  title="PDF Preview"
                 />
-              </div>
-            ) : (
-              <p>Preview not available for this file type.</p>
-            )}
+              ) : selectedFile.filename.match(/\.(jpg|jpeg|png|gif)$/) ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <img
+                    src={`http://localhost:5000/uploads/${selectedFile.filename}`}
+                    alt="Uploaded file"
+                    className="object-contain max-h-full max-w-full"
+                  />
+                </div>
+              ) : (
+                <p>Preview not available for this file type.</p>
+              )}
+
+              {/* Overlay Comment Section */}
+              {showComments && (
+                <div className="absolute inset-0 bg-white bg-opacity-80 overflow-y-auto">
+                  <CommentsModal
+                    isOpen={true}
+                    fileURL={`http://localhost:5000/uploads/${selectedFile.filename}`}
+                    onClose={() => setShowComments(false)}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

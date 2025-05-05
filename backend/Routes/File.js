@@ -1,0 +1,158 @@
+import express from "express";
+import fs from "fs";
+import path from "path";
+import mongoose from "mongoose";
+import { authenticateUser } from "../middleware/authmiddleware.js";
+import { fileModel } from "../models/file.model.js";
+import upload from "../middleware/upload.js";
+
+const router = express.Router();
+
+// Used in CommentSection.tsx
+router.get("/fileId/:filename", async (req, res) => {
+  try {
+    const { filename } = req.params;
+
+    const file = await fileModel.findOne({ filename });
+
+    if (!file) {
+      return res.status(404).json({ message: "File not found." });
+    }
+
+    res.json({ fileId: file._id });
+  } catch (error) {
+    console.error("Error fetching file ID:", error);
+    res.status(500).json({ message: "Server error while fetching file ID." });
+  }
+});
+
+router.delete("/:filename", authenticateUser, async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const fileDoc = await fileModel.findOne({ filename });
+
+    if (!fileDoc) return res.status(404).send("File not found in DB");
+
+    if (fileDoc.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).send("You are not authorized to delete this file");
+    }
+
+    await fileModel.deleteOne({ filename });
+
+    const filePath = path.resolve(fileDoc.path);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    res.status(200).send("File deleted successfully");
+  } catch (error) {
+    console.error("Delete Error:", error);
+    res.status(500).send("Error deleting file");
+  }
+});
+
+// this route makes course and school mandatory for each uploaded file.
+router.post(
+  "/upload",
+  authenticateUser,
+
+  upload.array("files"),
+  async (req, res) => {
+    try {
+      const files = req.files;
+      let { courses, schools } = req.body;
+      if (!Array.isArray(courses)) {
+        courses = [courses];
+      }
+      if (!Array.isArray(schools)) {
+        schools = [schools];
+      }
+
+      if (!files || files.length === 0) {
+        return res.status(400).send("No files uploaded");
+      }
+      if (
+        !courses ||
+        !schools ||
+        courses.length !== files.length ||
+        schools.length !== files.length
+      ) {
+        return res
+          .status(400)
+          .send(
+            "Courses or schools data is missing or does not match the number of files"
+          );
+      }
+
+      const savedFiles = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const { path, filename, originalname } = file;
+
+        const newFile = new fileModel({
+          path,
+          filename,
+          originalname,
+          userId: req.user._id,
+          course: courses[i],
+          school: schools[i],
+        });
+
+        await newFile.save();
+        savedFiles.push({
+          filename,
+          originalname,
+          course: courses[i],
+          school: schools[i],
+        });
+      }
+
+      console.log(savedFiles);
+
+      res.status(200).json({ message: "Files uploaded", files: savedFiles });
+    } catch (error) {
+      console.error("Upload Error:", error);
+      res.status(500).send("Unable to upload file");
+    }
+  }
+);
+
+router.get("/all", authenticateUser, async (req, res) => {
+  try {
+    console.log(req.user);
+    const userFiles = await fileModel.find({
+      userId: new mongoose.Types.ObjectId(req.user._id),
+    });
+
+    res.status(200).json(userFiles);
+  } catch (error) {
+    console.error("Fetch Files Error:", error);
+    res.status(500).send("Unable to fetch files");
+  }
+});
+
+router.get("/search", async (req, res) => {
+  try {
+    const query = req.query.q;
+
+    if (!query) {
+      return res.status(400).json({ message: "Search query missing" });
+    }
+
+    const results = await fileModel.find({
+      $or: [
+        { filename: { $regex: query, $options: "i" } },
+        { course: { $regex: query, $options: "i" } },
+        { school: { $regex: query, $options: "i" } },
+      ],
+    });
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Search Error:", error);
+    res.status(500).json({ message: "Server error during search" });
+  }
+});
+
+export default router;

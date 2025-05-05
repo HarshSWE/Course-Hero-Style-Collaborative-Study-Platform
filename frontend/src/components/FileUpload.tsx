@@ -13,17 +13,21 @@ type FileUploadProps = {
 type UploadedFile = {
   file: File;
   serverFilename?: string;
-  course?: string;
-  school?: string;
+  course: string;
+  school: string;
 };
 
 const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [shared, setShared] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleFileChange = (file: File) => {
-    setFiles((prev) => [...prev, { file }]);
+    setFiles((prev) => [
+      ...prev,
+      { file, course: "", school: "" }, // provide initial empty values
+    ]);
   };
 
   const removeFile = (index: number) => {
@@ -54,11 +58,21 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
 
     if (files.length === 0) return;
 
+    // ✅ Validation: Ensure each file has course and school
+    for (let i = 0; i < files.length; i++) {
+      const { course, school } = files[i];
+      if (!course || !school) {
+        setErrorMessage(`Please enter both course and school for each file`);
+        setTimeout(() => setErrorMessage(""), 3000);
+        return;
+      }
+    }
+
     const formData = new FormData();
     files.forEach(({ file, course, school }) => {
       formData.append("files", file);
-      if (course) formData.append("courses", course);
-      if (school) formData.append("schools", school);
+      formData.append("courses", course!); // guaranteed not undefined now
+      formData.append("schools", school!);
     });
 
     const token = localStorage.getItem("token");
@@ -69,7 +83,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/fileupload", {
+      const response = await fetch("http://localhost:5000/file/upload", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -136,6 +150,21 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
             >
               <div className="bg-green-100 text-green-800 px-4 py-2 rounded shadow">
                 Files Successfully Shared!
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {errorMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="absolute top-6 left-[33%] z-60"
+            >
+              <div className="bg-red-100 text-red-800 px-4 py-2 rounded shadow">
+                {errorMessage}
               </div>
             </motion.div>
           )}

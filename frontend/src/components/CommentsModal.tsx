@@ -16,7 +16,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const filename = fileURL?.split("/").pop() || ""; // "1745438903202-MAT344 Goals.png"
+  const filename = fileURL?.split("/").pop() || ""; //
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">

@@ -15,26 +15,27 @@ interface File {
 }
 
 const Shared = () => {
-  const [files, setFiles] = useState<File[]>([]);
+  const [sharedFiles, setSharedFiles] = useState<File[]>([]);
   const [fileToDelete, setFileToDelete] = useState<File | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [dontAskAgain, setDontAskAgain] = useState(
     sessionStorage.getItem("dontAskAgain") === "true"
   );
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [activeFileForComments, setActiveFileForComments] =
+    useState<File | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchFiles = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/myfiles", {
+        const res = await fetch("http://localhost:5000/file/all", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Failed to fetch files");
         const data = await res.json();
-        setFiles(data);
+        setSharedFiles(data);
       } catch (err) {
         console.error("Error fetching files:", err);
       } finally {
@@ -46,7 +47,7 @@ const Shared = () => {
   }, []);
 
   const handleCommentClick = (file: File) => {
-    setSelectedFile(file);
+    setActiveFileForComments(file);
   };
 
   const deleteFile = async (file: File) => {
@@ -58,7 +59,7 @@ const Shared = () => {
       });
       if (!res.ok) throw new Error("Failed to delete");
 
-      setFiles((prev) => prev.filter((f) => f._id !== file._id));
+      setSharedFiles((prev) => prev.filter((f) => f._id !== file._id));
     } catch (err) {
       console.error("Error deleting file:", err);
     }
@@ -89,7 +90,7 @@ const Shared = () => {
 
   const cleanFileName = (filename: string) => filename.replace(/^\d+-/, "");
 
-  const filteredFiles = files.filter((file) => {
+  const filteredFiles = sharedFiles.filter((file) => {
     const name = file?.originalname?.toLowerCase() || "";
     const filename = file?.filename?.toLowerCase() || "";
     return (
@@ -101,7 +102,7 @@ const Shared = () => {
   if (loading)
     return <div className="text-center p-4">Loading saved files...</div>;
 
-  if (files.length === 0) {
+  if (sharedFiles.length === 0) {
     return <div className="text-center p-4">No files publicly shared yet.</div>;
   }
 
@@ -191,14 +192,13 @@ const Shared = () => {
         />
       )}
 
-      {selectedFile && (
+      {activeFileForComments && (
         <>
-          {/* 1745438903202-MAT344 Goals.png */}
-          {console.log(selectedFile.filename)}
+          {console.log(activeFileForComments.filename)}
           <CommentsModal
             isOpen={true}
-            onClose={() => setSelectedFile(null)}
-            fileURL={`http://localhost:5000/uploads/${selectedFile.filename}`}
+            onClose={() => setActiveFileForComments(null)}
+            fileURL={`http://localhost:5000/uploads/${activeFileForComments.filename}`}
           />
         </>
       )}

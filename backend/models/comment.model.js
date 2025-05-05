@@ -7,6 +7,8 @@ const commentSchema = new Schema(
     parentId: { type: Schema.Types.ObjectId, ref: "Comment", default: null },
     content: { type: String, required: true },
     deleted: { type: Boolean, default: false },
+    userName: { type: String, required: false },
+    profilePictureUrl: { type: String, required: false },
   },
   { timestamps: true }
 );

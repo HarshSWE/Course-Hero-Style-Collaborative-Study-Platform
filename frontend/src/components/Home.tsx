@@ -7,6 +7,9 @@ import { faBookmark } from "@fortawesome/free-solid-svg-icons";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import InsertCommentIcon from "@mui/icons-material/InsertComment";
 import CommentsModal from "./CommentsModal";
+import ProfilePicture from "./ProfilePicture";
+import { useProfileImage } from "./ProfileImageContext";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 
 const Home = () => {
   const [showFileUpload, setShowFileUpload] = useState(false);
@@ -19,7 +22,8 @@ const Home = () => {
     new Set()
   );
   const [showComments, setShowComments] = useState(false);
-
+  const [showProfilePic, setShowProfilePic] = useState(false);
+  const { image } = useProfileImage();
   const navigate = useNavigate();
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +35,7 @@ const Home = () => {
   useEffect(() => {
     const fetchBookmarkedFileIds = async () => {
       try {
-        const res = await fetch("http://localhost:5000/bookmarked-files", {
+        const res = await fetch("http://localhost:5000/bookmarks/all", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -56,7 +60,7 @@ const Home = () => {
 
       try {
         const res = await fetch(
-          `http://localhost:5000/search?q=${encodeURIComponent(term)}`,
+          `http://localhost:5000/file/search?q=${encodeURIComponent(term)}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -96,8 +100,8 @@ const Home = () => {
   const toggleBookmark = async (fileId: string) => {
     const isBookmarked = bookmarkedFiles.has(fileId);
     const url = isBookmarked
-      ? `http://localhost:5000/unbookmark/${fileId}`
-      : `http://localhost:5000/bookmark/${fileId}`;
+      ? `http://localhost:5000/bookmarks/${fileId}`
+      : `http://localhost:5000/bookmarks/${fileId}`;
     const method = isBookmarked ? "DELETE" : "POST";
 
     try {
@@ -133,10 +137,16 @@ const Home = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search for Documents..."
-              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 "
             />
             {showDropdown && searchResults.length > 0 && (
-              <div className="absolute left-1/2 transform -translate-x-1/2 mt-1 w-full max-w-xl bg-white border border-gray-300 rounded-md shadow-lg z-50">
+              <div
+                className={`absolute left-1/2 transform -translate-x-1/2 mt-1 w-full max-w-xl bg-white border border-gray-300 rounded-md shadow-lg z-50 transition-all duration-300 ease-out ${
+                  showDropdown
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 -translate-y-2"
+                }`}
+              >
                 {searchResults.map((file: any) => {
                   const fileName = file.filename.split("-").slice(-1).join("-");
                   return (
@@ -161,6 +171,31 @@ const Home = () => {
           </div>
         </div>
 
+        {/* Profile Picture Button */}
+        <div className="relative mr-10">
+          <button
+            onClick={() => setShowProfilePic(!showProfilePic)}
+            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer"
+            title="Profile Picture"
+          >
+            {image ? (
+              <img
+                src={image}
+                alt="Profile"
+                className="object-cover w-full h-full rounded-full"
+              />
+            ) : (
+              <PersonOutlineIcon className="text-black w-6 h-6" />
+            )}
+          </button>
+
+          {/* Profile Picture Component */}
+          {showProfilePic && (
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10">
+              <ProfilePicture />
+            </div>
+          )}
+        </div>
         <button
           onClick={handleLogout}
           className="text-gray-700 font-semibold hover:text-red-600 transition"
@@ -183,7 +218,7 @@ const Home = () => {
           </button>
 
           <button
-            onClick={() => setShowFileUpload(false)}
+            onClick={() => navigate("/saved")}
             className="w-44 h-12 bg-white shadow transform -skew-x-6 flex items-center justify-center border border-gray-300 hover:bg-gray-100 transition font-medium"
             style={{ transform: "skewX(-12deg)" }}
           >
@@ -191,7 +226,7 @@ const Home = () => {
           </button>
 
           <button
-            onClick={() => alert("Shared documents clicked")}
+            onClick={() => navigate("/shared")}
             className="w-44 h-12 bg-white shadow transform -skew-x-6 flex items-center justify-center border border-gray-300 hover:bg-gray-100 transition font-medium"
             style={{ transform: "skewX(-12deg)" }}
           >

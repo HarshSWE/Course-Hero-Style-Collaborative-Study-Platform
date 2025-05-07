@@ -41,6 +41,34 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
 
+  const handleSaveEdit = () => {
+    onEdit(comment.id, editText);
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const handleReply = () => {
+    if (replyText.trim() !== "") {
+      onReply(replyText, comment.id);
+      setReplyText("");
+    }
+  };
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleDeleteClick = () => {
+    onDelete(comment.id);
+  };
+
+  const handleToggleCollapse = () => {
+    onToggleCollapse();
+  };
+
   return (
     <div className="mb-2">
       <div className="flex items-center justify-between">
@@ -68,8 +96,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             onChange={(e) => setEditText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                onEdit(comment.id, editText);
-                setIsEditing(false);
+                handleSaveEdit();
               }
             }}
             className="border p-1 rounded w-full mr-2"
@@ -82,49 +109,26 @@ const CommentItem: React.FC<CommentItemProps> = ({
       <div className="flex space-x-2 mt-1 text-sm text-gray-600 items-center">
         {isEditing ? (
           <>
-            <button
-              onClick={() => {
-                onEdit(comment.id, editText);
-                setIsEditing(false);
-              }}
-              className="text-green-600"
-            >
+            <button onClick={handleSaveEdit} className="text-green-600">
               Save
             </button>
-            <button
-              onClick={() => setIsEditing(false)}
-              className="text-red-500"
-            >
+            <button onClick={handleCancelEdit} className="text-red-500">
               Cancel
             </button>
           </>
         ) : (
           <>
-            <button
-              onClick={() => setIsEditing(true)}
-              className="hover:underline"
-            >
+            <button onClick={handleEditClick} className="hover:underline">
               Edit
             </button>
-            <button
-              onClick={() => onDelete(comment.id)}
-              className="hover:underline"
-            >
+            <button onClick={handleDeleteClick} className="hover:underline">
               Delete
             </button>
-            <button
-              onClick={() => {
-                if (replyText.trim() !== "") {
-                  onReply(replyText, comment.id);
-                  setReplyText("");
-                }
-              }}
-              className="hover:underline"
-            >
+            <button onClick={handleReply} className="hover:underline">
               Reply
             </button>
             {hasChildren && (
-              <button onClick={onToggleCollapse} className="ml-1">
+              <button onClick={handleToggleCollapse} className="ml-1">
                 {isCollapsed ? (
                   <ArrowDropDownIcon fontSize="small" />
                 ) : (
@@ -143,8 +147,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
           onChange={(e) => setReplyText(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && replyText.trim() !== "") {
-              onReply(replyText, comment.id);
-              setReplyText("");
+              handleReply();
             }
           }}
           placeholder="Reply..."

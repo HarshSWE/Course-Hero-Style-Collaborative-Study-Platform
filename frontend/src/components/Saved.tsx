@@ -27,22 +27,6 @@ const Saved = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBookmarkedFiles = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/bookmarks/all", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        const data = await res.json();
-        setBookmarkedFiles(data);
-      } catch (err) {
-        console.error("Error fetching bookmarked files:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBookmarkedFiles();
   }, []);
 
@@ -52,6 +36,40 @@ const Saved = () => {
     } else {
       setFileToDelete(file);
       setShowModal(true);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (fileToDelete) {
+      unbookmarkFile(fileToDelete._id);
+      setFileToDelete(null);
+      setShowModal(false);
+    }
+  };
+
+  const handleDontAskAgain = () => {
+    sessionStorage.setItem("dontAskAgain", "true");
+    setDontAskAgain(true);
+    handleConfirmDelete();
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const fetchBookmarkedFiles = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/bookmarks/all", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      const data = await res.json();
+      setBookmarkedFiles(data);
+    } catch (err) {
+      console.error("Error fetching bookmarked files:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -72,20 +90,6 @@ const Saved = () => {
     }
   };
 
-  const handleConfirmDelete = () => {
-    if (fileToDelete) {
-      unbookmarkFile(fileToDelete._id);
-      setFileToDelete(null);
-      setShowModal(false);
-    }
-  };
-
-  const handleDontAskAgain = () => {
-    sessionStorage.setItem("dontAskAgain", "true");
-    setDontAskAgain(true);
-    handleConfirmDelete();
-  };
-
   if (loading)
     return <div className="text-center p-4">Loading saved files...</div>;
 
@@ -100,7 +104,7 @@ const Saved = () => {
           type="text"
           placeholder="Search files..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearchChange}
           className="border border-gray-300 rounded-md px-3 py-1 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-black"
         />
       </div>

@@ -27,10 +27,23 @@ const Home = () => {
   const navigate = useNavigate();
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
+  useEffect(() => {
+    debouncedSearch(searchTerm);
+    return () => debouncedSearch.cancel();
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const fetchBookmarkedFileIds = async () => {
@@ -50,6 +63,38 @@ const Home = () => {
 
     fetchBookmarkedFileIds();
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  const toggleBookmark = async (fileId: string) => {
+    const isBookmarked = bookmarkedFiles.has(fileId);
+    const url = isBookmarked
+      ? `http://localhost:5000/bookmarks/${fileId}`
+      : `http://localhost:5000/bookmarks/${fileId}`;
+    const method = isBookmarked ? "DELETE" : "POST";
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to toggle bookmark");
+
+      setBookmarkedFiles((prev) => {
+        const newSet = new Set(prev);
+        isBookmarked ? newSet.delete(fileId) : newSet.add(fileId);
+        return newSet;
+      });
+    } catch (error) {
+      console.error("Bookmark toggle error:", error);
+    }
+  };
 
   const debouncedSearch = useRef(
     debounce(async (term: string) => {
@@ -78,51 +123,6 @@ const Home = () => {
       }
     }, 300)
   ).current;
-
-  useEffect(() => {
-    debouncedSearch(searchTerm);
-    return () => debouncedSearch.cancel();
-  }, [searchTerm]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(e.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const toggleBookmark = async (fileId: string) => {
-    const isBookmarked = bookmarkedFiles.has(fileId);
-    const url = isBookmarked
-      ? `http://localhost:5000/bookmarks/${fileId}`
-      : `http://localhost:5000/bookmarks/${fileId}`;
-    const method = isBookmarked ? "DELETE" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (!res.ok) throw new Error("Failed to toggle bookmark");
-
-      setBookmarkedFiles((prev) => {
-        const newSet = new Set(prev);
-        isBookmarked ? newSet.delete(fileId) : newSet.add(fileId);
-        return newSet;
-      });
-    } catch (error) {
-      console.error("Bookmark toggle error:", error);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -171,7 +171,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Profile Picture Button */}
         <div className="relative mr-10">
           <button
             onClick={() => setShowProfilePic(!showProfilePic)}
@@ -196,6 +195,7 @@ const Home = () => {
             </div>
           )}
         </div>
+
         <button
           onClick={handleLogout}
           className="text-gray-700 font-semibold hover:text-red-600 transition"
@@ -242,7 +242,6 @@ const Home = () => {
       {isModalOpen && selectedFile && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-full max-w-5xl h-[90vh] relative flex flex-col">
-            {/* Bookmark Button */}
             <button
               onClick={() => toggleBookmark(selectedFile._id)}
               className="absolute top-2 left-2 text-2xl text-blue-500"
@@ -255,7 +254,6 @@ const Home = () => {
               )}
             </button>
 
-            {/* Comments Button */}
             <button
               onClick={() => setShowComments(true)}
               className="absolute top-2 left-1/2 transform -translate-x-1/2 text-blue-500"
@@ -264,7 +262,6 @@ const Home = () => {
               <InsertCommentIcon fontSize="large" />
             </button>
 
-            {/* Close Modal Button */}
             <button
               onClick={() => setIsModalOpen(false)}
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl"
@@ -278,7 +275,6 @@ const Home = () => {
               </h2>
             </div>
 
-            {/* File preview and CommentSection overlay */}
             <div className="relative flex-1 overflow-hidden">
               {selectedFile.filename.toLowerCase().endsWith(".pdf") ? (
                 <iframe
@@ -298,7 +294,6 @@ const Home = () => {
                 <p>Preview not available for this file type.</p>
               )}
 
-              {/* Overlay Comment Section */}
               {showComments && (
                 <div className="absolute inset-0 bg-white bg-opacity-80 overflow-y-auto">
                   <CommentsModal

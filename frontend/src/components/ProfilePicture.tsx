@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useEffect } from "react";
+import React, { ChangeEvent } from "react";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
@@ -11,7 +11,6 @@ const ProfilePicture: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
-      // Preview locally
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
@@ -20,33 +19,36 @@ const ProfilePicture: React.FC = () => {
       };
       reader.readAsDataURL(file);
 
-      // Upload to backend
-      const formData = new FormData();
-      formData.append("profilePicture", file);
-
-      try {
-        const res = await fetch("http://localhost:5000/user/profile-picture", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // assuming you store JWT locally
-          },
-          body: formData,
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          console.log("Uploaded:", data.filePath);
-        } else {
-          console.error("Upload failed:", data.message);
-        }
-      } catch (err) {
-        console.error("Error uploading file:", err);
-      }
+      await uploadImage(file);
     }
   };
 
   const handleRemove = () => {
     setImage(null);
+  };
+
+  const uploadImage = async (file: File) => {
+    const formData = new FormData();
+    formData.append("profilePicture", file);
+
+    try {
+      const res = await fetch("http://localhost:5000/user/profile-picture", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        console.log("Uploaded:", data.filePath);
+      } else {
+        console.error("Upload failed:", data.message);
+      }
+    } catch (err) {
+      console.error("Error uploading file:", err);
+    }
   };
 
   return (

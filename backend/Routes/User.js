@@ -5,7 +5,6 @@ import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
-// Used in CommentSection.tsx
 router.get("/profile-url/:userId", async (req, res) => {
   const { userId } = req.params;
 
@@ -65,8 +64,6 @@ router.post(
     }
   }
 );
-
-// Used in CommentSection.tsx
 
 router.get("/:userId", async (req, res) => {
   try {

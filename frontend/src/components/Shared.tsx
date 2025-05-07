@@ -50,21 +50,6 @@ const Shared = () => {
     setActiveFileForComments(file);
   };
 
-  const deleteFile = async (file: File) => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/file/${file.filename}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to delete");
-
-      setSharedFiles((prev) => prev.filter((f) => f._id !== file._id));
-    } catch (err) {
-      console.error("Error deleting file:", err);
-    }
-  };
-
   const handleDeleteClick = (file: File) => {
     if (dontAskAgain) {
       deleteFile(file);
@@ -86,6 +71,21 @@ const Shared = () => {
     sessionStorage.setItem("dontAskAgain", "true");
     setDontAskAgain(true);
     handleConfirmDelete();
+  };
+
+  const deleteFile = async (file: File) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/file/${file.filename}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+
+      setSharedFiles((prev) => prev.filter((f) => f._id !== file._id));
+    } catch (err) {
+      console.error("Error deleting file:", err);
+    }
   };
 
   const cleanFileName = (filename: string) => filename.replace(/^\d+-/, "");

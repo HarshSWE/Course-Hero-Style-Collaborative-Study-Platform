@@ -16,12 +16,11 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const filename = fileURL?.split("/").pop() || ""; //
+  const filename = fileURL?.split("/").pop() || "";
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
       <div className="bg-white w-[1300px] h-[600px] rounded-lg shadow-lg flex overflow-hidden relative">
-        {/* Left Half */}
         <div className="w-1/2 p-6 border-r border-gray-300 overflow-auto">
           <h2 className="text-xl font-semibold mb-4">File Preview</h2>
           {filename.endsWith(".pdf") ? (
@@ -49,12 +48,10 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
           )}
         </div>
 
-        {/* Right Half */}
         <div>
           <CommentSection filename={filename} />
         </div>
 
-        {/* Close Icon */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-red-600"

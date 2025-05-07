@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-  const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState(""); // <-- new state for error message
+
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -11,13 +13,17 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    await login();
+  };
+
+  const login = async () => {
     try {
       const response = await fetch("http://localhost:5000/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify(form),
       });
 
@@ -29,11 +35,11 @@ const Login = () => {
         console.log("LOGIN SUCCESS - TOKEN:", data.token);
         navigate("/");
       } else {
-        throw new Error(data.message || "Login failed");
+        setError(data.message || "Login failed");
       }
     } catch (error: any) {
       console.error(error);
-      alert(error.message || "Login failed");
+      setError(error.message || "Login failed");
     }
   };
 
@@ -41,6 +47,12 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
         <h2 className="text-2xl font-semibold text-center mb-6">Login</h2>
+        {error && (
+          <div className="mb-4 text-red-500 text-sm text-center font-medium">
+            {error}
+          </div>
+        )}
+
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-left text-sm font-medium text-gray-700 mb-1">

@@ -24,10 +24,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleFileChange = (file: File) => {
-    setFiles((prev) => [
-      ...prev,
-      { file, course: "", school: "" }, // provide initial empty values
-    ]);
+    setFiles((prev) => [...prev, { file, course: "", school: "" }]);
   };
 
   const removeFile = (index: number) => {
@@ -58,11 +55,10 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
 
     if (files.length === 0) return;
 
-    // ✅ Validation: Ensure each file has course and school
     for (let i = 0; i < files.length; i++) {
       const { course, school } = files[i];
       if (!course || !school) {
-        setErrorMessage(`Please enter both course and school for each file`);
+        setErrorMessage("Please enter both course and school for each file");
         setTimeout(() => setErrorMessage(""), 3000);
         return;
       }
@@ -71,12 +67,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
     const formData = new FormData();
     files.forEach(({ file, course, school }) => {
       formData.append("files", file);
-      formData.append("courses", course!); // guaranteed not undefined now
+      formData.append("courses", course!);
       formData.append("schools", school!);
     });
 
     const token = localStorage.getItem("token");
-
     if (!token) {
       console.error("No token found");
       return;
@@ -116,17 +111,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
   return (
     <div className="w-full min-h-screen flex items-center justify-center">
       <div
-        // Let's users drag and drop
         {...getRootProps()}
-        // Makes children of the div positioned relative to this div
         className="relative w-[90%] max-w-[1200px] h-[650px] bg-white border-2 border-dashed border-gray-300 rounded-2xl p-12 shadow-lg hover:border-blue-500 transition overflow-y-auto"
       >
-        {/* lets users still upload via click */}
         <input {...getInputProps()} multiple />
 
         <button
           onClick={handleShareClick}
-          // absolute means the child will position itself relative to the closest positioned ancesto
           className="absolute top-4 left-4 text-gray-500 hover:text-gray-700"
         >
           Share
@@ -169,10 +160,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
             </motion.div>
           )}
         </AnimatePresence>
-        {/* flex-col: sets the main axis to vertical, so children stack top-to-bottom instead of side-by-side (which is the default flex-row). */}
+
         <div className="w-full h-full flex flex-col items-center justify-start text-center">
           {files.length === 0 ? (
-            // justify start: Aligns flex items to the start of the main axis, in this case its col (vertical)
             <div className="flex flex-col items-center justify-center h-full w-full p-8 cursor-pointer transition">
               <UploadFileIcon style={{ fontSize: 64, color: "#1e40af" }} />
               <p className="mt-4 text-lg text-gray-600">
@@ -180,12 +170,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
               </p>
             </div>
           ) : (
-            // items start aligns it via the cross axis
             <div className="mt-6 w-full flex flex-wrap gap-x-4 gap-y-6 justify-start items-start">
               {files.map(({ file, course, school }, index) => {
-                // It creates a temporary local URL that points to the file the user just uploaded (or selected).
                 const fileUrl = URL.createObjectURL(file);
-                // file.type is a string that represents the MIME type of the file.
                 const isImage = file.type.startsWith("image/");
                 const isExpanded = expandedIndex === index;
 
@@ -194,7 +181,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                     key={index}
                     className="relative flex flex-col items-center bg-gray-50 rounded-lg p-4 shadow-md text-center w-[140px] min-h-[220px] overflow-hidden"
                   >
-                    {/* Delete Button - Top Left */}
                     <IconButton
                       onClick={(e) => {
                         e.stopPropagation();
@@ -206,7 +192,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                       <DeleteIcon style={{ fontSize: 12 }} />
                     </IconButton>
 
-                    {/* Add Button - Top Right */}
                     <IconButton
                       onClick={(e) => {
                         e.stopPropagation();
@@ -218,6 +203,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                       <AddIcon style={{ fontSize: 13 }} />
                     </IconButton>
 
+                    {/* File Preview */}
                     {isImage ? (
                       <div className="flex flex-col items-center pt-6">
                         <img

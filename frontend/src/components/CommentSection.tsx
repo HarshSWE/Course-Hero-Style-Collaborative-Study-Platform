@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
-import CommentItem from "./CommentItem"; // ✅ Import your modularized component
+import CommentItem from "./CommentItem";
+import socket from "./socketService";
 
 interface DecodedToken {
   id: string;
@@ -32,6 +33,79 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [profilePictureUrl, setProfilePicture] = useState<string | null>(null);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const fetchedFileId = await getFileIdFromFilename(filename);
+        if (!fetchedFileId) return;
+        setFileId(fetchedFileId);
+
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const decoded: DecodedToken = jwtDecode(token);
+        setUserId(decoded.id);
+
+        const [name, profileUrl] = await Promise.all([
+          fetchUserName(decoded.id),
+          fetchProfilePicture(decoded.id),
+        ]);
+        if (name) setUserName(name);
+        if (profileUrl) setProfilePicture(profileUrl);
+      } catch (err) {
+        console.error("Initialization error:", err);
+      }
+    };
+
+    init();
+  }, [filename]);
+
+  useEffect(() => {
+    socket.on("receiveComment", (comment) => {
+      setComments((prev) => [
+        ...prev,
+        {
+          id: comment._id,
+          text: comment.content,
+          parentId: comment.parentId,
+          createdAt: new Date(comment.createdAt),
+          fileId: comment.fileId,
+          userId: comment.userId,
+          userName: comment.userName,
+          profilePictureUrl: comment.profilePictureUrl,
+        },
+      ]);
+    });
+
+    socket.on("commentDeleted", ({ id }) => {
+      setComments((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, text: "[deleted]" } : c))
+      );
+    });
+
+    socket.on("commentUpdated", ({ id, content }) => {
+      setComments((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, text: content } : c))
+      );
+    });
+
+    return () => {
+      socket.off("receiveComment");
+      socket.off("commentDeleted");
+      socket.off("commentUpdated");
+    };
+  }, []);
+
+  useEffect(() => {
+    if (fileId) fetchAllComments(fileId);
+  }, [fileId]);
+
+  const handlePostComment = () => {
+    if (newComment.trim() !== "") {
+      addComment(newComment);
+      setNewComment("");
+    }
+  };
 
   const getFileIdFromFilename = async (filename: string) => {
     try {
@@ -72,34 +146,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
     }
   };
 
-  useEffect(() => {
-    const fetchFileId = async () => {
-      const fileId = await getFileIdFromFilename(filename);
-      setFileId(fileId || "");
-    };
-    fetchFileId();
-  }, [filename]);
-
-  useEffect(() => {
-    if (fileId) {
-      const token = localStorage.getItem("token");
-      if (token) {
-        const decoded: DecodedToken = jwtDecode(token);
-        setUserId(decoded.id);
-      }
-    }
-  }, [fileId]);
-
-  useEffect(() => {
-    if (userId) {
-      fetchUserName(userId);
-      (async () => {
-        const url = await fetchProfilePicture(userId);
-        setProfilePicture(url);
-      })();
-    }
-  }, [userId]);
-
   const addComment = async (text: string, parentId: string | null = null) => {
     try {
       if (!fileId || !userId || !userName)
@@ -119,19 +165,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
       if (!response.ok) throw new Error("Failed to post comment");
 
       const newComment = await response.json();
-      setComments((prev) => [
-        ...prev,
-        {
-          id: newComment._id,
-          text: newComment.content,
-          parentId: newComment.parentId,
-          createdAt: new Date(newComment.createdAt),
-          fileId: newComment.fileId,
-          userId: newComment.userId,
-          userName: newComment.userName,
-          profilePictureUrl: newComment.profilePictureUrl,
-        },
-      ]);
+      socket.emit("newComment", newComment);
     } catch (err) {
       console.error("Error posting comment:", err);
     }
@@ -148,6 +182,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
           comment.id === id ? { ...comment, text: "[deleted]" } : comment
         )
       );
+      socket.emit("deleteComment", { id });
     } catch (error) {
       console.error("Error deleting comment:", error);
     }
@@ -167,6 +202,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
           comment.id === id ? { ...comment, text: updated.content } : comment
         )
       );
+      socket.emit("updateComment", { id, content: updated.content });
     } catch (error) {
       console.error("Error updating comment:", error);
     }
@@ -202,10 +238,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
       console.error("Error fetching comments:", error);
     }
   };
-
-  useEffect(() => {
-    if (fileId) fetchAllComments(fileId);
-  }, [fileId]);
 
   const renderComments = (parentId: string | null = null) => {
     return comments
@@ -243,19 +275,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && newComment.trim() !== "") {
-                addComment(newComment);
-                setNewComment("");
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handlePostComment();
               }
             }}
           />
           <button
-            onClick={() => {
-              if (newComment.trim() !== "") {
-                addComment(newComment);
-                setNewComment("");
-              }
-            }}
+            onClick={handlePostComment}
             className="bg-blue-600 text-white px-3 py-2 rounded"
           >
             Post

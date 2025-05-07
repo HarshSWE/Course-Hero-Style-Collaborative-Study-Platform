@@ -4,7 +4,6 @@ import { commentModel } from "../models/comment.model.js";
 
 const router = express.Router();
 
-// Used in CommentSection.tsx
 router.post("/", async (req, res) => {
   try {
     const { fileId, userId, parentId, content, userName, profilePictureUrl } =
@@ -46,8 +45,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Used in CommentSection.tsx
-
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -68,8 +65,6 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
-// Used in CommentSection.tsx
 
 router.put("/:id", async (req, res) => {
   try {
@@ -96,8 +91,6 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: "Server error while updating comment." });
   }
 });
-
-// Used in CommentSection.tsx
 
 router.get("/all", async (req, res) => {
   const { fileId } = req.query;

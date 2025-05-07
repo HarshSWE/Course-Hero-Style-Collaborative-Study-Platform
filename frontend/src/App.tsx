@@ -7,6 +7,7 @@ import Shared from "./components/Shared";
 import Saved from "./components/Saved";
 import CommentsModal from "./components/CommentsModal";
 import ProfilePicture from "./components/ProfilePicture";
+import OtpInput from "./components/OtpInput";
 import { ProfileImageProvider } from "./components/ProfileImageContext";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -32,6 +33,7 @@ function App() {
             }
           />
           <Route path="/ProfilePicture" element={<ProfilePicture />} />
+          <Route path="/otpInput" element={<OtpInput />} />
         </Routes>
       </Router>
     </ProfileImageProvider>

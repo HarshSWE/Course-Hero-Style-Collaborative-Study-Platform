@@ -8,7 +8,6 @@ import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
-// Used in CommentSection.tsx
 router.get("/fileId/:filename", async (req, res) => {
   try {
     const { filename } = req.params;
@@ -51,7 +50,6 @@ router.delete("/:filename", authenticateUser, async (req, res) => {
   }
 });
 
-// this route makes course and school mandatory for each uploaded file.
 router.post(
   "/upload",
   authenticateUser,

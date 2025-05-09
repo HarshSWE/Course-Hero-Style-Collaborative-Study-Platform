@@ -1,6 +1,8 @@
 import express from "express";
 import { userModel } from "../models/user.model.js";
 import { commentModel } from "../models/comment.model.js";
+import { notificationModel } from "../models/notification.model.js";
+import { getIO, getUserSockets } from "../sockets/commentSocket.js";
 
 const router = express.Router();
 
@@ -8,7 +10,9 @@ router.post("/", async (req, res) => {
   try {
     const { fileId, userId, parentId, content, userName, profilePictureUrl } =
       req.body;
+
     console.log(req.body);
+
     if (!fileId || !userId || !content) {
       return res.status(400).json({
         message: "fileId, userId, and content are required.",
@@ -20,6 +24,7 @@ router.post("/", async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
+    // Create the new comment
     const newComment = await commentModel.create({
       fileId,
       userId,
@@ -27,6 +32,39 @@ router.post("/", async (req, res) => {
       content,
       userName,
       profilePictureUrl,
+    });
+
+    const io = getIO();
+    const userSockets = getUserSockets();
+
+    if (parentId) {
+      const parentComment = await commentModel.findById(parentId);
+      if (parentComment && parentComment.userId.toString() !== userId) {
+        await notificationModel.create({
+          recipient: parentComment.userId,
+          file: fileId,
+          message: `${userName} replied to your comment.`,
+        });
+
+        const recipientSocketId = userSockets[parentComment.userId.toString()];
+        if (recipientSocketId) {
+          io.to(recipientSocketId).emit("notification", {
+            message: `${userName} replied to your comment.`,
+            fileId,
+          });
+        }
+      }
+    }
+
+    io.emit("receiveComment", {
+      _id: newComment._id,
+      content: newComment.content,
+      parentId: newComment.parentId,
+      createdAt: newComment.createdAt,
+      fileId: newComment.fileId,
+      userId: newComment.userId,
+      userName: user.name,
+      profilePictureUrl: user.profilePictureUrl,
     });
 
     res.status(201).json({

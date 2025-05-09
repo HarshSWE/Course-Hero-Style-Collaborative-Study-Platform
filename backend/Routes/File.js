@@ -153,4 +153,36 @@ router.get("/search", async (req, res) => {
   }
 });
 
+router.get("/metadata", async (req, res) => {
+  try {
+    const files = await fileModel.find({}, "filename course school");
+    res.json(files);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch metadata" });
+  }
+});
+
+router.post("/match", async (req, res) => {
+  const recommendations = req.body.recommendations; // array of { course, school }
+  console.log("Received recommendations:", recommendations);
+
+  if (!Array.isArray(recommendations))
+    return res.status(400).send("Invalid input");
+
+  try {
+    const queries = recommendations.map((r) => ({
+      course: new RegExp(`^${r.course.trim()}$`, "i"),
+      school: new RegExp(`^${r.school.trim()}$`, "i"),
+    }));
+    console.log("Mongo queries:", queries);
+
+    const files = await fileModel.find({ $or: queries });
+    console.log("Matched files:", files);
+    res.json(files);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
+});
+
 export default router;

@@ -1,7 +1,7 @@
 import React from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import { PhotoProvider, PhotoView } from "react-photo-view";
-import CommentSection from "./CommentSection"; // ✅ Already imported
+import CommentSection from "./CommentSection";
 
 interface CommentsModalProps {
   isOpen: boolean;

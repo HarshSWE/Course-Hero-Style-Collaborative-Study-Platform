@@ -61,6 +61,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
   }, [filename]);
 
   useEffect(() => {
+    if (userId) {
+      socket.emit("register", userId);
+    }
+  }, [userId]);
+
+  useEffect(() => {
     socket.on("receiveComment", (comment) => {
       setComments((prev) => [
         ...prev,
@@ -165,7 +171,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
       if (!response.ok) throw new Error("Failed to post comment");
 
       const newComment = await response.json();
-      socket.emit("newComment", newComment);
+      // socket.emit("newComment", newComment);
     } catch (err) {
       console.error("Error posting comment:", err);
     }

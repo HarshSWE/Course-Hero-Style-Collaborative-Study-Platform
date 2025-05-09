@@ -12,6 +12,7 @@ import bookmarkRoutes from "./Routes/Bookmark.js";
 import commentRoutes from "./Routes/Comment.js";
 import fileRoutes from "./Routes/File.js";
 import userRoutes from "./Routes/User.js";
+import notificationsRoutes from "./Routes/Notification.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +29,8 @@ app.use("/bookmarks", bookmarkRoutes);
 app.use("/comment", commentRoutes);
 app.use("/file", fileRoutes);
 app.use("/user", userRoutes);
+app.use("/notifications", notificationsRoutes);
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => {

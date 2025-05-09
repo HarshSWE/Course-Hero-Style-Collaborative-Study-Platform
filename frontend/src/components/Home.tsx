@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import FileUpload from "./FileUpload";
+import Recommendations from "./Reccomendations";
 import { useNavigate } from "react-router-dom";
 import debounce from "lodash.debounce";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -10,6 +11,9 @@ import CommentsModal from "./CommentsModal";
 import ProfilePicture from "./ProfilePicture";
 import { useProfileImage } from "./ProfileImageContext";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import { useLocation } from "react-router-dom";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import { io } from "socket.io-client";
 
 const Home = () => {
   const [showFileUpload, setShowFileUpload] = useState(false);
@@ -26,6 +30,14 @@ const Home = () => {
   const { image } = useProfileImage();
   const navigate = useNavigate();
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const [notificationsCount, setNotificationsCount] = useState(0);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const isUploading = params.get("upload") === "true";
+    setShowFileUpload(isUploading);
+  }, [location]);
 
   useEffect(() => {
     debouncedSearch(searchTerm);
@@ -62,6 +74,38 @@ const Home = () => {
     };
 
     fetchBookmarkedFileIds();
+  }, []);
+
+  useEffect(() => {
+    const fetchNotificationsCount = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/notifications/count", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await res.json();
+        setNotificationsCount(data.count); // assuming your API returns { count: number }
+      } catch (err) {
+        console.error("Error fetching notifications count:", err);
+      }
+    };
+
+    fetchNotificationsCount();
+  }, []);
+
+  useEffect(() => {
+    const socket = io("http://localhost:5000", {
+      auth: { token: localStorage.getItem("token") },
+    });
+
+    socket.on("new-notification", () => {
+      setNotificationsCount((prev) => prev + 1);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const handleLogout = () => {
@@ -127,6 +171,17 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="w-full bg-white shadow px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center space-x-4 mr-4 relative">
+          <NotificationsIcon
+            className="text-blue-500 cursor-pointer hover:scale-110 transition"
+            fontSize="medium"
+          />
+          {notificationsCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+              {notificationsCount}
+            </span>
+          )}
+        </div>
         <div
           ref={searchContainerRef}
           className="relative w-full flex justify-center"
@@ -137,11 +192,11 @@ const Home = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search for Documents..."
-              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 "
+              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 transition ml-12"
             />
             {showDropdown && searchResults.length > 0 && (
               <div
-                className={`absolute left-1/2 transform -translate-x-1/2 mt-1 w-full max-w-xl bg-white border border-gray-300 rounded-md shadow-lg z-50 transition-all duration-300 ease-out ${
+                className={`absolute left-1/2 transform -translate-x-1/2 mt-1 w-full max-w-xl bg-white border border-gray-300 rounded-md shadow-lg z-50 transition-all duration-300 ml-12 ease-out ${
                   showDropdown
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-2"
@@ -207,7 +262,10 @@ const Home = () => {
       <div className="flex px-8 py-6">
         <div className="space-y-4 mr-10">
           <button
-            onClick={() => setShowFileUpload(true)}
+            onClick={() => {
+              navigate("?upload=true");
+              setShowFileUpload(true);
+            }}
             className="w-44 h-12 bg-white shadow transform -skew-x-6 flex items-center justify-center border border-gray-300 hover:bg-blue-100 transition font-medium text-black"
             style={{ transform: "skewX(-12deg)" }}
           >
@@ -235,7 +293,8 @@ const Home = () => {
         </div>
 
         <div className="flex-1">
-          {showFileUpload ? <FileUpload inlineMode /> : null}
+          {/* Conditionally render Recommendations if FileUpload is not showing */}
+          {showFileUpload ? <FileUpload inlineMode /> : <Recommendations />}
         </div>
       </div>
 

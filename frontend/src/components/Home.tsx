@@ -32,6 +32,7 @@ const Home = () => {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const [notificationsCount, setNotificationsCount] = useState(0);
+  const { setImage } = useProfileImage();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -110,6 +111,7 @@ const Home = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    setImage(null);
     navigate("/login");
   };
 

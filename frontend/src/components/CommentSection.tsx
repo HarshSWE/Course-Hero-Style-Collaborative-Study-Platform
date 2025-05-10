@@ -65,7 +65,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
       socket.emit("register", userId);
     }
   }, [userId]);
-
+  // socket.io allows communication between browsers and clients, and listens for the "receiveComment" event
   useEffect(() => {
     socket.on("receiveComment", (comment) => {
       setComments((prev) => [

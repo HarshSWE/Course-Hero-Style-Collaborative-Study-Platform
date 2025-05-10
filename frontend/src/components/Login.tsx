@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useProfileImage } from "./ProfileImageContext";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState(""); // <-- new state for error message
+  const { refreshProfilePicture } = useProfileImage();
 
   const navigate = useNavigate();
 
@@ -33,6 +35,9 @@ const Login = () => {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         console.log("LOGIN SUCCESS - TOKEN:", data.token);
+
+        await refreshProfilePicture();
+
         navigate("/");
       } else {
         setError(data.message || "Login failed");

@@ -185,4 +185,18 @@ router.post("/match", async (req, res) => {
   }
 });
 
+router.get("/:id/filename", async (req, res) => {
+  console.log(req.params.id);
+  try {
+    const file = await fileModel.findById(req.params.id);
+    console.log("Found file:", file);
+
+    if (!file) return res.status(404).json({ message: "File not found" });
+
+    res.json({ filename: file.filename });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 export default router;

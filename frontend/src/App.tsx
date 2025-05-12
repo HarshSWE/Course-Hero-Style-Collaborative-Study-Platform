@@ -10,32 +10,34 @@ import ProfilePicture from "./components/ProfilePicture";
 import OtpInput from "./components/OtpInput";
 import { ProfileImageProvider } from "./components/ProfileImageContext";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { NotificationsProvider } from "./components/NotificationsContext";
 
 function App() {
   return (
     <ProfileImageProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/fileupload" element={<FileUpload />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/shared" element={<Shared />} />
-          <Route path="/saved" element={<Saved />} />
-
-          <Route
-            path="/CommentsModal"
-            element={
-              <CommentsModal
-                isOpen={true}
-                onClose={() => window.history.back()}
-              />
-            }
-          />
-          <Route path="/ProfilePicture" element={<ProfilePicture />} />
-          <Route path="/otpInput" element={<OtpInput />} />
-        </Routes>
-      </Router>
+      <NotificationsProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/fileupload" element={<FileUpload />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/shared" element={<Shared />} />
+            <Route path="/saved" element={<Saved />} />
+            <Route
+              path="/CommentsModal"
+              element={
+                <CommentsModal
+                  isOpen={true}
+                  onClose={() => window.history.back()}
+                />
+              }
+            />
+            <Route path="/ProfilePicture" element={<ProfilePicture />} />
+            <Route path="/otpInput" element={<OtpInput />} />
+          </Routes>
+        </Router>
+      </NotificationsProvider>
     </ProfileImageProvider>
   );
 }

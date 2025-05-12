@@ -44,17 +44,20 @@ router.post("/", async (req, res) => {
       if (parentComment && parentComment.userId.toString() !== userId) {
         // Create a notification for a parent comments user
         await notificationModel.create({
+          commentRef: newComment._id,
           recipient: parentComment.userId,
           file: fileId,
           message: `${userName} replied to your comment.`,
+          preview: content,
         });
         // gets the socket.id of person who posted parent comment
         const recipientSocketId = userSockets[parentComment.userId.toString()];
-        // Send a real-time notification to the parent comment's user, with some info:
+        // Send a real time notification to the parent comment's user, with some info:
 
         if (recipientSocketId) {
           io.to(recipientSocketId).emit("notification", {
             message: `${userName} replied to your comment.`,
+            preview: content,
             fileId,
           });
         }

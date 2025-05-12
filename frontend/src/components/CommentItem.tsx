@@ -70,7 +70,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
   };
 
   return (
-    <div className="mb-2">
+    // comment.id is the _id of comment in backend
+    <div id={`comment-${comment.id}`} className="mb-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           {profilePictureUrl ? (

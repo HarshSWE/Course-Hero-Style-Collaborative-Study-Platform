@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProfileImage } from "./ProfileImageContext";
+import { useNotifications } from "./NotificationsContext";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState(""); // <-- new state for error message
+  const [error, setError] = useState("");
   const { refreshProfilePicture } = useProfileImage();
+  const { refreshNotifications } = useNotifications();
 
   const navigate = useNavigate();
 
@@ -37,6 +39,7 @@ const Login = () => {
         console.log("LOGIN SUCCESS - TOKEN:", data.token);
 
         await refreshProfilePicture();
+        await refreshNotifications();
 
         navigate("/");
       } else {

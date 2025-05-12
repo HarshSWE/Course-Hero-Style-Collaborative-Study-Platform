@@ -5,6 +5,7 @@ import { PhotoProvider, PhotoView } from "react-photo-view";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import InsertCommentIcon from "@mui/icons-material/InsertComment";
 import CommentsModal from "./CommentsModal";
+import { useNotifications } from "./NotificationsContext";
 
 interface File {
   _id: string;
@@ -25,6 +26,7 @@ const Shared = () => {
   const [activeFileForComments, setActiveFileForComments] =
     useState<File | null>(null);
   const [loading, setLoading] = useState(true);
+  const { notifications, setNotifications } = useNotifications();
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -199,6 +201,7 @@ const Shared = () => {
             isOpen={true}
             onClose={() => setActiveFileForComments(null)}
             fileURL={`http://localhost:5000/uploads/${activeFileForComments.filename}`}
+            notifications={notifications}
           />
         </>
       )}

@@ -9,8 +9,14 @@ const notificationSchema = new mongoose.Schema({
   },
   file: { type: mongoose.Schema.Types.ObjectId, ref: "File", required: true },
   message: { type: String, required: true },
+  preview: { type: String }, // <-- add this
   isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
+  commentRef: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Comment",
+    required: false,
+  },
 });
 
 export const notificationModel = mongoose.model(

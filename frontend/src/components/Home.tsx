@@ -14,6 +14,18 @@ import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import { useLocation } from "react-router-dom";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { io } from "socket.io-client";
+import { useNotifications } from "./NotificationsContext";
+
+type Notification = {
+  _id: string;
+  recipient: string;
+  file: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  preview: string;
+  commentRef: string;
+};
 
 const Home = () => {
   const [showFileUpload, setShowFileUpload] = useState(false);
@@ -32,6 +44,13 @@ const Home = () => {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const [notificationsCount, setNotificationsCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [filename, setFilename] = useState<string | null>(null);
+  const [showCommentSection, setShowCommentSection] = useState<boolean>(false);
+  const [selectedPreview, setSelectedPreview] = useState<string | null>(null);
+  const [notifCommentId, setNotifCommentId] = useState<string>("");
+  const { notifications, setNotifications } = useNotifications();
+
   const { setImage } = useProfileImage();
 
   useEffect(() => {
@@ -112,6 +131,7 @@ const Home = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     setImage(null);
+    setNotifications([]);
     navigate("/login");
   };
 
@@ -170,20 +190,111 @@ const Home = () => {
     }, 300)
   ).current;
 
+  const fetchFilename = async (fileId: string) => {
+    console.log("Fetching filename for fileId:", fileId);
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/file/${fileId}/filename`
+      );
+      if (!response.ok) {
+        throw new Error("File not found");
+      }
+      const data = await response.json();
+      console.log("Filename:", data.filename);
+
+      setFilename(data.filename);
+      setShowCommentSection(true);
+
+      return data.filename;
+    } catch (error) {
+      console.error("Error fetching file:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="w-full bg-white shadow px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-4 mr-4 relative">
-          <NotificationsIcon
-            className="text-blue-500 cursor-pointer hover:scale-110 transition"
-            fontSize="medium"
-          />
-          {notificationsCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-              {notificationsCount}
-            </span>
-          )}
+        <div className="flex items-center space-x-4 mr-4">
+          <div className="relative">
+            <NotificationsIcon
+              className="text-blue-500 cursor-pointer hover:scale-110 transition"
+              fontSize="medium"
+              onClick={() => setShowNotifications((prev) => !prev)}
+            />
+            {notificationsCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                {notificationsCount}
+              </span>
+            )}
+
+            {showNotifications && (
+              <div className="absolute top-8 w-80 bg-white border border-gray-300 rounded-md shadow-lg z-50 overflow-y-auto max-h-96">
+                {notifications.length > 0 ? (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif._id}
+                      className="px-4 py-2 border-b hover:bg-gray-100"
+                      onClick={() => {
+                        fetch(
+                          `http://localhost:5000/notifications/mark-as-read/${notif._id}`,
+                          {
+                            method: "PATCH",
+                          }
+                        )
+                          .then(() => {
+                            setSelectedPreview(notif.preview);
+                            setNotifCommentId(notif.commentRef);
+                            fetchFilename(notif.file);
+                            setNotifications((prev) =>
+                              prev.filter((n) => n._id !== notif._id)
+                            );
+                            setNotificationsCount((prev) =>
+                              Math.max(prev - 1, 0)
+                            );
+                          })
+                          .catch((err) =>
+                            console.error("Failed to mark as read", err)
+                          );
+                      }}
+                    >
+                      <div className="font-medium">{notif.message}</div>
+                      {notif.preview && (
+                        <div className="text-sm text-gray-700 italic mt-1">
+                          {notif.preview}
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-500">
+                        {new Date(notif.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-gray-500">No notifications</div>
+                )}
+                {showCommentSection && filename && (
+                  <>
+                    {console.log(
+                      "Passing notifications to CommentsModal:",
+                      notifications
+                    )}
+                    <CommentsModal
+                      isOpen={true}
+                      fileURL={`http://localhost:5000/uploads/${filename}`}
+                      previewText={selectedPreview}
+                      onClose={() => {
+                        setShowCommentSection(false);
+                        setSelectedPreview(null);
+                      }}
+                      commentRef={notifCommentId}
+                    />
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
+
         <div
           ref={searchContainerRef}
           className="relative w-full flex justify-center"
@@ -245,7 +356,6 @@ const Home = () => {
             )}
           </button>
 
-          {/* Profile Picture Component */}
           {showProfilePic && (
             <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10">
               <ProfilePicture />
@@ -295,7 +405,6 @@ const Home = () => {
         </div>
 
         <div className="flex-1">
-          {/* Conditionally render Recommendations if FileUpload is not showing */}
           {showFileUpload ? <FileUpload inlineMode /> : <Recommendations />}
         </div>
       </div>
@@ -356,13 +465,20 @@ const Home = () => {
               )}
 
               {showComments && (
-                <div className="absolute inset-0 bg-white bg-opacity-80 overflow-y-auto">
-                  <CommentsModal
-                    isOpen={true}
-                    fileURL={`http://localhost:5000/uploads/${selectedFile.filename}`}
-                    onClose={() => setShowComments(false)}
-                  />
-                </div>
+                <>
+                  {console.log(
+                    "Selected file filename:",
+                    selectedFile?.filename
+                  )}
+                  <div className="absolute inset-0 bg-white bg-opacity-80 overflow-y-auto">
+                    <CommentsModal
+                      isOpen={true}
+                      fileURL={`http://localhost:5000/uploads/${selectedFile.filename}`}
+                      onClose={() => setShowComments(false)}
+                      notifications={notifications}
+                    />
+                  </div>
+                </>
               )}
             </div>
           </div>

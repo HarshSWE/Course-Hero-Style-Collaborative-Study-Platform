@@ -3,16 +3,33 @@ import CloseIcon from "@mui/icons-material/Close";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import CommentSection from "./CommentSection";
 
+type Notification = {
+  _id: string;
+  recipient: string;
+  file: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  preview: string;
+  commentRef: string;
+};
+
 interface CommentsModalProps {
   isOpen: boolean;
   onClose: () => void;
   fileURL?: string;
+  previewText?: string | null;
+  commentRef?: string;
+  notifications?: Notification[];
 }
 
 const CommentsModal: React.FC<CommentsModalProps> = ({
   isOpen,
   onClose,
   fileURL,
+  previewText,
+  commentRef,
+  notifications,
 }) => {
   if (!isOpen) return null;
 
@@ -49,7 +66,12 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
         </div>
 
         <div>
-          <CommentSection filename={filename} />
+          <CommentSection
+            filename={filename}
+            previewText={previewText}
+            commentRef={commentRef}
+            notifications={notifications}
+          />
         </div>
 
         <button

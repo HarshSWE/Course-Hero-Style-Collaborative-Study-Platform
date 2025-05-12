@@ -3,6 +3,17 @@ import { jwtDecode } from "jwt-decode";
 import CommentItem from "./CommentItem";
 import socket from "./socketService";
 
+type Notification = {
+  _id: string;
+  recipient: string;
+  file: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  preview: string;
+  commentRef: string;
+};
+
 interface DecodedToken {
   id: string;
   name: string;
@@ -23,9 +34,17 @@ interface Comment {
 
 interface CommentSectionProps {
   filename: string;
+  previewText?: string | null;
+  commentRef?: string;
+  notifications?: Notification[];
 }
 
-const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
+const CommentSection: React.FC<CommentSectionProps> = ({
+  filename,
+  previewText,
+  commentRef,
+  notifications,
+}) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
@@ -33,6 +52,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [profilePictureUrl, setProfilePicture] = useState<string | null>(null);
+  const [scrollToPreview, setScrollToPreview] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -65,7 +85,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
       socket.emit("register", userId);
     }
   }, [userId]);
-  // socket.io allows communication between browsers and clients, and listens for the "receiveComment" event
+
   useEffect(() => {
     socket.on("receiveComment", (comment) => {
       setComments((prev) => [
@@ -105,6 +125,74 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
   useEffect(() => {
     if (fileId) fetchAllComments(fileId);
   }, [fileId]);
+
+  useEffect(() => {
+    if (scrollToPreview && commentRef) {
+      console.log("CommentRef", commentRef);
+      const element = document.getElementById(`comment-${commentRef}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        element.classList.add(
+          "bg-gray-100",
+          "transition-colors",
+          "p-3",
+          "rounded-lg"
+        );
+
+        setTimeout(() => {
+          element.classList.remove("bg-gray-100", "p-3", "rounded-lg");
+        }, 2000);
+      }
+      setScrollToPreview(false);
+    }
+  }, [scrollToPreview, commentRef]);
+
+  useEffect(() => {
+    console.log("useEffect triggered. notifications:", notifications);
+
+    if (!notifications || notifications.length === 0) return;
+
+    console.log("Intersection observer effect ran");
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const commentId = entry.target.id;
+
+            notifications.forEach(async (notif) => {
+              if (notif.commentRef === commentId && notif.isRead === false) {
+                try {
+                  await fetch(
+                    `http://localhost:5000/notifications/mark-as-read/${notif._id}`,
+                    {
+                      method: "PATCH",
+                    }
+                  );
+                  console.log(`Marked notification ${notif._id} as read`);
+                } catch (err) {
+                  console.error("Failed to mark notification as read", err);
+                }
+              }
+            });
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: "0px",
+        threshold: 0.5,
+      }
+    );
+
+    const commentElements = document.querySelectorAll("[id]");
+    commentElements.forEach((el) => observer.observe(el));
+
+    return () => {
+      commentElements.forEach((el) => observer.unobserve(el));
+    };
+  }, [notifications, comments]);
 
   const handlePostComment = () => {
     if (newComment.trim() !== "") {
@@ -171,7 +259,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
       if (!response.ok) throw new Error("Failed to post comment");
 
       const newComment = await response.json();
-      // socket.emit("newComment", newComment);
     } catch (err) {
       console.error("Error posting comment:", err);
     }
@@ -240,6 +327,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
         profilePictureUrl: c.profilePictureUrl,
       }));
       setComments(formattedComments);
+      if (previewText) {
+        setScrollToPreview(true);
+      }
     } catch (error) {
       console.error("Error fetching comments:", error);
     }
@@ -251,6 +341,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ filename }) => {
       .map((comment) => (
         <div
           key={comment.id}
+          id={comment.id}
           className="ml-4 mt-2 border-l border-gray-300 pl-4"
         >
           <CommentItem

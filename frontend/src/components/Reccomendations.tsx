@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import InsertCommentIcon from "@mui/icons-material/InsertComment";
-import IconButton from "@mui/material/IconButton";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark } from "@fortawesome/free-solid-svg-icons";

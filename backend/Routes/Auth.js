@@ -65,7 +65,7 @@ router.post("/verify-otp", async (req, res) => {
       return res.status(400).json({ message: "OTP expired" });
     }
 
-    await Otp.deleteOne({ email }); // Invalidate OTP after success
+    await Otp.deleteOne({ email });
     res.status(200).json({ success: true, message: "OTP verified" });
   } catch (error) {
     console.error("Verify OTP Error:", error);

@@ -92,6 +92,15 @@ const Saved = () => {
     }
   };
 
+  const filteredFiles = bookmarkedFiles.filter((file) => {
+    const name = file?.originalname?.toLowerCase() || "";
+    const filename = file?.filename?.toLowerCase() || "";
+    return (
+      name.includes(searchTerm.toLowerCase()) ||
+      filename.includes(searchTerm.toLowerCase())
+    );
+  });
+
   if (loading)
     return <div className="text-center p-4">Loading saved files...</div>;
 
@@ -111,71 +120,62 @@ const Saved = () => {
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {bookmarkedFiles
-          .filter((file) => {
-            const name = file?.originalname?.toLowerCase() || "";
-            const filename = file?.filename?.toLowerCase() || "";
-            return (
-              name.includes(searchTerm.toLowerCase()) ||
-              filename.includes(searchTerm.toLowerCase())
-            );
-          })
-          .map((file) => {
-            if (!file || !file.filename) return null;
-            const fileUrl = `http://localhost:5000/uploads/${file.filename}`;
+        {filteredFiles.map((file) => {
+          if (!file || !file.filename) return null;
+          const fileUrl = `http://localhost:5000/uploads/${file.filename}`;
 
-            return (
-              <div
-                key={file._id}
-                className="relative border border-gray-300 rounded-lg shadow hover:shadow-lg transition cursor-pointer hover:border-black"
+          return (
+            <div
+              key={file._id}
+              className="relative border border-gray-300 rounded-lg shadow hover:shadow-lg transition cursor-pointer hover:border-black"
+            >
+              <InsertCommentIcon
+                fontSize="small"
+                className="absolute top-2 left-1/2 transform -translate-x-1/2 text-blue-500 cursor-pointer hover:text-blue-600"
+                onClick={() => setActiveFileForComments(file)}
+              />
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteClick(file);
+                }}
+                className="absolute top-2 right-2 text-red-500 hover:text-red-600"
+                size="small"
               >
-                <InsertCommentIcon
-                  fontSize="small"
-                  className="absolute top-2 left-1/2 transform -translate-x-1/2 text-blue-500 cursor-pointer hover:text-blue-600"
-                  onClick={() => setActiveFileForComments(file)}
-                />
-                <IconButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(file);
-                  }}
-                  className="absolute top-2 right-2 text-red-500 hover:text-red-600"
-                  size="small"
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
 
-                <div className="p-4">
-                  <p className="font-semibold text-lg">{file.originalname}</p>
-                  <p className="text-sm text-black-500">
-                    {file.filename.replace(/^\d+-/, "")}
-                  </p>
-                  <p className="text-sm text-black-500">
-                    {file.course} · {file.school}
-                  </p>
-                </div>
-                {file.filename.endsWith(".pdf") ? (
-                  <iframe
-                    src={fileUrl}
-                    title={file.originalname}
-                    className="w-11/12 h-80 object-contain border-t mx-auto"
-                  />
-                ) : file.filename.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                  <PhotoProvider>
-                    <PhotoView src={fileUrl}>
-                      <div>
-                        <img src={fileUrl} alt={file.originalname} />
-                      </div>
-                    </PhotoView>
-                  </PhotoProvider>
-                ) : (
-                  <div className="p-4 text-gray-500 text-sm border-t">
-                    No preview available for this file type
-                  </div>
-                )}
+              <div className="p-4">
+                <p className="font-semibold text-lg">{file.originalname}</p>
+                <p className="text-sm text-black-500">
+                  {file.filename.replace(/^\d+-/, "")}
+                </p>
+                <p className="text-sm text-black-500">
+                  {file.course} · {file.school}
+                </p>
               </div>
-            );
-          })}
+              {file.filename.endsWith(".pdf") ? (
+                <iframe
+                  src={fileUrl}
+                  title={file.originalname}
+                  className="w-11/12 h-80 object-contain border-t mx-auto"
+                />
+              ) : file.filename.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                <PhotoProvider>
+                  <PhotoView src={fileUrl}>
+                    <div>
+                      <img src={fileUrl} alt={file.originalname} />
+                    </div>
+                  </PhotoView>
+                </PhotoProvider>
+              ) : (
+                <div className="p-4 text-gray-500 text-sm border-t">
+                  No preview available for this file type
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {showModal && fileToDelete && (

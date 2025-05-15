@@ -203,7 +203,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                       <AddIcon style={{ fontSize: 13 }} />
                     </IconButton>
 
-                    {/* File Preview */}
                     {isImage ? (
                       <div className="flex flex-col items-center pt-6">
                         <img

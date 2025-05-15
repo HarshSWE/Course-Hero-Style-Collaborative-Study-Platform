@@ -7,11 +7,11 @@ type Notification = {
   _id: string;
   recipient: string;
   file: string;
-  message: string;
+  messageBy: string;
   isRead: boolean;
   createdAt: string;
   preview: string;
-  commentRef: string;
+  commentReference: string;
 };
 
 interface CommentsModalProps {
@@ -19,7 +19,7 @@ interface CommentsModalProps {
   onClose: () => void;
   fileURL?: string;
   previewText?: string | null;
-  commentRef?: string;
+  commentReference?: string;
   notifications?: Notification[];
 }
 
@@ -28,7 +28,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
   onClose,
   fileURL,
   previewText,
-  commentRef,
+  commentReference,
   notifications,
 }) => {
   if (!isOpen) return null;
@@ -69,7 +69,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
           <CommentSection
             filename={filename}
             previewText={previewText}
-            commentRef={commentRef}
+            commentReference={commentReference}
             notifications={notifications}
           />
         </div>

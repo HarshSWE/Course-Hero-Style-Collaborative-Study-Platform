@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import FileUpload from "./FileUpload";
 import Recommendations from "./Reccomendations";
 import { useNavigate } from "react-router-dom";
@@ -16,17 +16,6 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import { io } from "socket.io-client";
 import { useNotifications } from "./NotificationsContext";
 
-type Notification = {
-  _id: string;
-  recipient: string;
-  file: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-  preview: string;
-  commentRef: string;
-};
-
 const Home = () => {
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,13 +32,17 @@ const Home = () => {
   const navigate = useNavigate();
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
-  const [notificationsCount, setNotificationsCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [filename, setFilename] = useState<string | null>(null);
   const [showCommentSection, setShowCommentSection] = useState<boolean>(false);
   const [selectedPreview, setSelectedPreview] = useState<string | null>(null);
   const [notifCommentId, setNotifCommentId] = useState<string>("");
-  const { notifications, setNotifications } = useNotifications();
+  const {
+    notifications,
+    setNotifications,
+    notificationsCount,
+    setNotificationsCount,
+  } = useNotifications();
 
   const { setImage } = useProfileImage();
 
@@ -97,24 +90,6 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    const fetchNotificationsCount = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/notifications/count", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        const data = await res.json();
-        setNotificationsCount(data.count); // assuming your API returns { count: number }
-      } catch (err) {
-        console.error("Error fetching notifications count:", err);
-      }
-    };
-
-    fetchNotificationsCount();
-  }, []);
-
-  useEffect(() => {
     const socket = io("http://localhost:5000", {
       auth: { token: localStorage.getItem("token") },
     });
@@ -132,6 +107,7 @@ const Home = () => {
     localStorage.removeItem("token");
     setImage(null);
     setNotifications([]);
+    setNotificationsCount(0);
     navigate("/login");
   };
 
@@ -244,7 +220,7 @@ const Home = () => {
                         )
                           .then(() => {
                             setSelectedPreview(notif.preview);
-                            setNotifCommentId(notif.commentRef);
+                            setNotifCommentId(notif.commentReference);
                             fetchFilename(notif.file);
                             setNotifications((prev) =>
                               prev.filter((n) => n._id !== notif._id)
@@ -258,7 +234,7 @@ const Home = () => {
                           );
                       }}
                     >
-                      <div className="font-medium">{notif.message}</div>
+                      <div className="font-medium">{notif.messageBy}</div>
                       {notif.preview && (
                         <div className="text-sm text-gray-700 italic mt-1">
                           {notif.preview}
@@ -286,7 +262,7 @@ const Home = () => {
                         setShowCommentSection(false);
                         setSelectedPreview(null);
                       }}
-                      commentRef={notifCommentId}
+                      commentReference={notifCommentId}
                     />
                   </>
                 )}

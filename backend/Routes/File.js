@@ -163,7 +163,7 @@ router.get("/metadata", async (req, res) => {
 });
 
 router.post("/match", async (req, res) => {
-  const recommendations = req.body.recommendations; // array of { course, school }
+  const recommendations = req.body.recommendations;
   console.log("Received recommendations:", recommendations);
 
   if (!Array.isArray(recommendations))

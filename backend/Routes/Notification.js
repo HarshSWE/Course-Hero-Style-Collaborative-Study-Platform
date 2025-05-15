@@ -4,7 +4,6 @@ import { authenticateUser } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
-// returns count of unread notifications for a particular user
 router.get("/count", authenticateUser, async (req, res) => {
   try {
     const count = await notificationModel.countDocuments({

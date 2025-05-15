@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ReplyIcon from "@mui/icons-material/Reply";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 export interface Comment {
   id: string;
@@ -10,8 +15,9 @@ export interface Comment {
   createdAt: Date;
   fileId: string;
   userId: string;
-  userName: string;
+  username: string;
   profilePictureUrl: string | null;
+  netVotes: number;
 }
 
 export interface CommentItemProps {
@@ -22,8 +28,9 @@ export interface CommentItemProps {
   hasChildren: boolean;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  userName: string;
+  username: string;
   profilePictureUrl: string | null;
+  netVotes: number;
 }
 
 const CommentItem: React.FC<CommentItemProps> = ({
@@ -34,12 +41,46 @@ const CommentItem: React.FC<CommentItemProps> = ({
   hasChildren,
   isCollapsed,
   onToggleCollapse,
-  userName,
+  username,
   profilePictureUrl,
+  netVotes,
 }) => {
   const [replyText, setReplyText] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
+  const [commentNetVotes, setCommentNetVotes] = useState(netVotes);
+  const token = localStorage.getItem("token");
+
+  const voteOnComment = async (
+    commentId: string,
+    voteType: "upvote" | "downvote",
+    token: string
+  ) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/comment/${commentId}/vote`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ voteType }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to vote on comment");
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error voting on comment:", error);
+      throw error;
+    }
+  };
 
   const handleSaveEdit = () => {
     onEdit(comment.id, editText);
@@ -69,8 +110,21 @@ const CommentItem: React.FC<CommentItemProps> = ({
     onToggleCollapse();
   };
 
+  const handleVote = async (voteType: "upvote" | "downvote") => {
+    if (!token) {
+      console.error("User not authenticated");
+      return;
+    }
+
+    try {
+      const data = await voteOnComment(comment.id, voteType, token);
+      setCommentNetVotes(data.netVotes);
+    } catch (err) {
+      console.error("Voting failed", err);
+    }
+  };
+
   return (
-    // comment.id is the _id of comment in backend
     <div id={`comment-${comment.id}`} className="mb-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -85,7 +139,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               <PersonOutlineIcon className="text-white" fontSize="small" />
             </div>
           )}
-          <span className="text-gray-500 text-sm">Posted By: {userName}</span>
+          <span className="text-gray-500 text-sm">Posted By: {username}</span>
         </div>
       </div>
 
@@ -119,15 +173,35 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </>
         ) : (
           <>
-            <button onClick={handleEditClick} className="hover:underline">
-              Edit
-            </button>
-            <button onClick={handleDeleteClick} className="hover:underline">
-              Delete
-            </button>
-            <button onClick={handleReply} className="hover:underline">
-              Reply
-            </button>
+            <div className="flex gap-2">
+              <button onClick={handleEditClick} className="hover:text-blue-500">
+                <EditIcon fontSize="small" />
+              </button>
+              <button
+                onClick={handleDeleteClick}
+                className="hover:text-red-500"
+              >
+                <DeleteIcon fontSize="small" />
+              </button>
+              <button onClick={handleReply} className="hover:text-blue-500">
+                <ReplyIcon fontSize="small" />
+              </button>
+              <button
+                onClick={() => handleVote("upvote")}
+                className="hover:text-blue-500"
+              >
+                <ArrowUpwardIcon fontSize="small" />
+              </button>
+
+              <span className="text-sm font-medium">{commentNetVotes}</span>
+
+              <button
+                onClick={() => handleVote("downvote")}
+                className="hover:text-red-500"
+              >
+                <ArrowDownwardIcon fontSize="small" />
+              </button>
+            </div>
             {hasChildren && (
               <button onClick={handleToggleCollapse} className="ml-1">
                 {isCollapsed ? (

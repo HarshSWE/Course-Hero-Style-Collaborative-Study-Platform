@@ -3,13 +3,21 @@ import { userModel } from "../models/user.model.js";
 import { commentModel } from "../models/comment.model.js";
 import { notificationModel } from "../models/notification.model.js";
 import { getIO, getUserSockets } from "../sockets/commentSocket.js";
+import { authenticateUser } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
 router.post("/", async (req, res) => {
   try {
-    const { fileId, userId, parentId, content, userName, profilePictureUrl } =
-      req.body;
+    const {
+      fileId,
+      userId,
+      parentId,
+      content,
+      username,
+      profilePictureUrl,
+      netVotes,
+    } = req.body;
 
     console.log(req.body);
 
@@ -24,46 +32,39 @@ router.post("/", async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Create the new comment
     const newComment = await commentModel.create({
       fileId,
       userId,
       parentId: parentId || null,
       content,
-      userName,
+      username,
       profilePictureUrl,
+      netVotes,
     });
 
     const io = getIO();
     const userSockets = getUserSockets();
-    // Check if parentId exists
     if (parentId) {
-      // Find that parent comment
       const parentComment = await commentModel.findById(parentId);
-      // Check if parent comment exists and user is not replying to themselves
       if (parentComment && parentComment.userId.toString() !== userId) {
-        // Create a notification for a parent comments user
         await notificationModel.create({
-          commentRef: newComment._id,
+          commentReference: newComment._id,
           recipient: parentComment.userId,
           file: fileId,
-          message: `${userName} replied to your comment.`,
+          messageBy: `${username} replied to your comment.`,
           preview: content,
         });
-        // gets the socket.id of person who posted parent comment
         const recipientSocketId = userSockets[parentComment.userId.toString()];
-        // Send a real time notification to the parent comment's user, with some info:
 
         if (recipientSocketId) {
           io.to(recipientSocketId).emit("notification", {
-            message: `${userName} replied to your comment.`,
+            message: `${username} replied to your comment.`,
             preview: content,
             fileId,
           });
         }
       }
     }
-    // Emits an event called "receiveComment" to all connected clients (users)
 
     io.emit("receiveComment", {
       _id: newComment._id,
@@ -72,8 +73,9 @@ router.post("/", async (req, res) => {
       createdAt: newComment.createdAt,
       fileId: newComment.fileId,
       userId: newComment.userId,
-      userName: user.name,
+      username: user.name,
       profilePictureUrl: user.profilePictureUrl,
+      netVotes: newComment.netVotes,
     });
 
     res.status(201).json({
@@ -83,8 +85,9 @@ router.post("/", async (req, res) => {
       createdAt: newComment.createdAt,
       fileId: newComment.fileId,
       userId: newComment.userId,
-      userName: user.name,
+      username: user.name,
       profilePictureUrl: user.profilePictureUrl,
+      netVotes: newComment.netVotes,
     });
   } catch (error) {
     console.error("Error saving comment:", error);
@@ -159,6 +162,46 @@ router.get("/all", async (req, res) => {
   } catch (err) {
     console.error("Error fetching comments:", err);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.post("/:id/vote", authenticateUser, async (req, res) => {
+  const { id } = req.params;
+  const { voteType } = req.body;
+  const userId = req.user._id;
+
+  const value = voteType === "upvote" ? 1 : -1;
+
+  try {
+    const comment = await commentModel.findById(id);
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+    const existingVoteIndex = comment.votes.findIndex(
+      (v) => v.userId.toString() === userId.toString()
+    );
+
+    if (existingVoteIndex !== -1) {
+      if (comment.votes[existingVoteIndex].value === value) {
+        comment.votes.splice(existingVoteIndex, 1);
+      } else {
+        comment.votes[existingVoteIndex].value = value;
+      }
+    } else {
+      comment.votes.push({ userId, value });
+    }
+
+    comment.netVotes = comment.votes.reduce((sum, v) => sum + v.value, 0);
+
+    await comment.save();
+
+    res.status(200).json({
+      message: "Vote updated",
+      netVotes: comment.netVotes,
+      votes: comment.votes,
+    });
+  } catch (err) {
+    console.error("Error voting on comment:", err);
+    res.status(500).json({ message: "Server error while voting." });
   }
 });
 

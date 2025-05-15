@@ -2,16 +2,17 @@ import React, { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import CommentItem from "./CommentItem";
 import socket from "./socketService";
+import { useNotifications } from "./NotificationsContext";
 
 type Notification = {
   _id: string;
   recipient: string;
   file: string;
-  message: string;
+  messageBy: string;
   isRead: boolean;
   createdAt: string;
   preview: string;
-  commentRef: string;
+  commentReference: string;
 };
 
 interface DecodedToken {
@@ -28,31 +29,34 @@ interface Comment {
   createdAt: Date;
   fileId: string;
   userId: string;
-  userName: string;
+  username: string;
   profilePictureUrl: string | null;
+  netVotes: number;
 }
 
 interface CommentSectionProps {
   filename: string;
   previewText?: string | null;
-  commentRef?: string;
+  commentReference?: string;
   notifications?: Notification[];
 }
 
 const CommentSection: React.FC<CommentSectionProps> = ({
   filename,
   previewText,
-  commentRef,
-  notifications,
+  commentReference,
 }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const [fileId, setFileId] = useState<string>("");
   const [userId, setUserId] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
+  const [username, setUserName] = useState<string | null>(null);
   const [profilePictureUrl, setProfilePicture] = useState<string | null>(null);
   const [scrollToPreview, setScrollToPreview] = useState(false);
+  const [netVotes, setNetVotes] = useState<number>(0);
+  const { notifications, setNotifications, setNotificationsCount } =
+    useNotifications();
 
   useEffect(() => {
     const init = async () => {
@@ -97,8 +101,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           createdAt: new Date(comment.createdAt),
           fileId: comment.fileId,
           userId: comment.userId,
-          userName: comment.userName,
+          username: comment.username,
           profilePictureUrl: comment.profilePictureUrl,
+          netVotes: comment.netVotes,
         },
       ]);
     });
@@ -127,9 +132,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   }, [fileId]);
 
   useEffect(() => {
-    if (scrollToPreview && commentRef) {
-      console.log("CommentRef", commentRef);
-      const element = document.getElementById(`comment-${commentRef}`);
+    if (scrollToPreview && commentReference) {
+      console.log("CommentRef", commentReference);
+      const element = document.getElementById(`comment-${commentReference}`);
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
 
@@ -146,7 +151,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       }
       setScrollToPreview(false);
     }
-  }, [scrollToPreview, commentRef]);
+  }, [scrollToPreview, commentReference]);
 
   useEffect(() => {
     console.log("useEffect triggered. notifications:", notifications);
@@ -162,7 +167,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({
             const commentId = entry.target.id;
 
             notifications.forEach(async (notif) => {
-              if (notif.commentRef === commentId && notif.isRead === false) {
+              if (
+                notif.commentReference === commentId &&
+                notif.isRead === false
+              ) {
                 try {
                   await fetch(
                     `http://localhost:5000/notifications/mark-as-read/${notif._id}`,
@@ -171,6 +179,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                     }
                   );
                   console.log(`Marked notification ${notif._id} as read`);
+
+                  setNotifications((prev) =>
+                    prev.filter((n) => n._id !== notif._id)
+                  );
+
+                  setNotificationsCount((prev) => Math.max(prev - 1, 0));
                 } catch (err) {
                   console.error("Failed to mark notification as read", err);
                 }
@@ -192,7 +206,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     return () => {
       commentElements.forEach((el) => observer.unobserve(el));
     };
-  }, [notifications, comments]);
+  }, [notifications, comments, setNotifications, setNotificationsCount]);
 
   const handlePostComment = () => {
     if (newComment.trim() !== "") {
@@ -242,7 +256,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
   const addComment = async (text: string, parentId: string | null = null) => {
     try {
-      if (!fileId || !userId || !userName)
+      if (!fileId || !userId || !username)
         throw new Error("Missing user or file info.");
       const response = await fetch("http://localhost:5000/comment", {
         method: "POST",
@@ -252,8 +266,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           userId,
           parentId,
           content: text,
-          userName,
+          username,
           profilePictureUrl,
+          netVotes,
         }),
       });
       if (!response.ok) throw new Error("Failed to post comment");
@@ -323,8 +338,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         createdAt: new Date(c.createdAt),
         fileId: c.fileId,
         userId: c.userId,
-        userName: c.userName,
+        username: c.username,
         profilePictureUrl: c.profilePictureUrl,
+        netVotes: c.netVotes,
       }));
       setComments(formattedComments);
       if (previewText) {
@@ -352,8 +368,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({
             hasChildren={comments.some((c) => c.parentId === comment.id)}
             isCollapsed={collapsedIds.has(comment.id)}
             onToggleCollapse={() => toggleCollapse(comment.id)}
-            userName={comment.userName}
+            username={comment.username}
             profilePictureUrl={comment.profilePictureUrl}
+            netVotes={comment.netVotes}
           />
           {!collapsedIds.has(comment.id) && renderComments(comment.id)}
         </div>

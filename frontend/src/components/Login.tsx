@@ -7,7 +7,8 @@ const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const { refreshProfilePicture } = useProfileImage();
-  const { refreshNotifications } = useNotifications();
+  const { refreshNotifications, refreshNotificationsCount } =
+    useNotifications();
 
   const navigate = useNavigate();
 
@@ -40,6 +41,7 @@ const Login = () => {
 
         await refreshProfilePicture();
         await refreshNotifications();
+        await refreshNotificationsCount();
 
         navigate("/");
       } else {

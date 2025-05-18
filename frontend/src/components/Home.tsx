@@ -15,6 +15,7 @@ import { useLocation } from "react-router-dom";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { io } from "socket.io-client";
 import { useNotifications } from "./NotificationsContext";
+import AddToFolderDropdown from "./AddToFolderDropdown";
 
 const Home = () => {
   const [showFileUpload, setShowFileUpload] = useState(false);
@@ -37,6 +38,12 @@ const Home = () => {
   const [showCommentSection, setShowCommentSection] = useState<boolean>(false);
   const [selectedPreview, setSelectedPreview] = useState<string | null>(null);
   const [notifCommentId, setNotifCommentId] = useState<string>("");
+  const [folderDropdown, setFolderDropdown] = useState(false);
+
+  const [selectedBookmarkFileId, setSelectedBookmarkFileId] = useState<
+    string | null
+  >(null);
+
   const {
     notifications,
     setNotifications,
@@ -113,9 +120,7 @@ const Home = () => {
 
   const toggleBookmark = async (fileId: string) => {
     const isBookmarked = bookmarkedFiles.has(fileId);
-    const url = isBookmarked
-      ? `http://localhost:5000/bookmarks/${fileId}`
-      : `http://localhost:5000/bookmarks/${fileId}`;
+    const url = `http://localhost:5000/bookmarks/${fileId}`;
     const method = isBookmarked ? "DELETE" : "POST";
 
     try {
@@ -130,7 +135,14 @@ const Home = () => {
 
       setBookmarkedFiles((prev) => {
         const newSet = new Set(prev);
-        isBookmarked ? newSet.delete(fileId) : newSet.add(fileId);
+        if (isBookmarked) {
+          newSet.delete(fileId);
+        } else {
+          newSet.add(fileId);
+          // Show dropdown only when adding bookmark
+          setSelectedBookmarkFileId(fileId);
+          setFolderDropdown(true);
+        }
         return newSet;
       });
     } catch (error) {
@@ -388,6 +400,15 @@ const Home = () => {
       {isModalOpen && selectedFile && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-full max-w-5xl h-[90vh] relative flex flex-col">
+            {folderDropdown && selectedBookmarkFileId === selectedFile._id && (
+              <AddToFolderDropdown
+                fileId={selectedFile._id}
+                onFileAdded={() => {
+                  setFolderDropdown(false);
+                  setSelectedBookmarkFileId(null);
+                }}
+              />
+            )}
             <button
               onClick={() => toggleBookmark(selectedFile._id)}
               className="absolute top-2 left-2 text-2xl text-blue-500"

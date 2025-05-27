@@ -4,7 +4,7 @@ import InsertCommentIcon from "@mui/icons-material/InsertComment";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark } from "@fortawesome/free-solid-svg-icons";
-import CommentsModal from "./CommentsModal";
+import CommentsModal from "./Modals/CommentsModal";
 
 interface File {
   _id: string;

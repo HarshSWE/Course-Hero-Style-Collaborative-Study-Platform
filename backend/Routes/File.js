@@ -199,4 +199,73 @@ router.get("/:id/filename", async (req, res) => {
   }
 });
 
+router.put("/:id/view", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const updatedFile = await fileModel.findByIdAndUpdate(
+      id,
+      { $inc: { views: 1 } },
+      { new: true }
+    );
+
+    if (!updatedFile) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    res.json(updatedFile);
+  } catch (error) {
+    console.error("Error incrementing views:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.put("/:id/save", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const updatedFile = await fileModel.findByIdAndUpdate(
+      id,
+      { $inc: { saves: 1 } },
+      { new: true }
+    );
+
+    if (!updatedFile) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    res.json(updatedFile);
+  } catch (error) {
+    console.error("Error incrementing saves:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.put("/:id/unsave", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const updatedFile = await fileModel.findByIdAndUpdate(
+      id,
+      { $inc: { saves: -1 } },
+      { new: true }
+    );
+
+    if (!updatedFile) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    // Ensure saves don't go below zero (optional but recommended)
+    if (updatedFile.saves < 0) {
+      updatedFile.saves = 0;
+      await updatedFile.save();
+    }
+
+    res.json(updatedFile);
+  } catch (error) {
+    console.error("Error decrementing saves:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 export default router;

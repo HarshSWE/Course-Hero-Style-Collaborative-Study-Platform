@@ -4,7 +4,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 import requests
-import numpy as np  # Ensure numpy is imported
+import numpy as np  
 
 app = Flask(__name__)
 CORS(app)
@@ -33,8 +33,7 @@ def recommend_endpoint():
     target_texts = [f"{file['course']} {file['school']}" for file in saved_files]
     saved_tfidf = vectorizer.transform(target_texts)
     
-    # Convert to numpy array
-    avg_vector = np.asarray(saved_tfidf.mean(axis=0))  # Converts sparse matrix to a numpy array
+    avg_vector = np.asarray(saved_tfidf.mean(axis=0))  
 
     similarities = cosine_similarity(avg_vector, tfidf_matrix).flatten()
     scores = list(enumerate(similarities))
@@ -48,7 +47,6 @@ def recommend_endpoint():
         if len(recommendations) == 5:
             break
 
-    # Convert recommendations to a list of dictionaries that can be serialized into JSON
     recommendations_json = recommendations = [r.to_dict() for r in recommendations]
 
     return jsonify(recommendations_json)

@@ -6,7 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import http from "http";
 import { initSocket } from "./sockets/commentSocket.js";
-
+import { startInsightCron } from "./cron/insightJob.js";
 import authRoutes from "./Routes/Auth.js";
 import bookmarkRoutes from "./Routes/Bookmark.js";
 import commentRoutes from "./Routes/Comment.js";
@@ -42,5 +42,6 @@ app.get("/", (req, res) => {
 server.listen(5000, () => {
   connectDB();
   initSocket(server);
+  startInsightCron();
   console.log("Server running at http://localhost:5000");
 });

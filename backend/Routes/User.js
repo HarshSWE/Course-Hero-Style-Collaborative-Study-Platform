@@ -1,9 +1,17 @@
 import express from "express";
 import { userModel } from "../models/user.model.js";
+import { commentModel } from "../models/comment.model.js";
 import { authenticateUser } from "../middleware/authmiddleware.js";
+import { fileModel } from "../models/file.model.js";
+import { notificationModel } from "../models/notification.model.js";
+import { getUserStats } from "../utils/statsHelper.js";
+
+import { OpenAI } from "openai";
+
 import upload from "../middleware/upload.js";
 
 const router = express.Router();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 router.get("/profile-url/:userId", async (req, res) => {
   const { userId } = req.params;
@@ -79,6 +87,74 @@ router.get("/:userId", async (req, res) => {
   } catch (error) {
     console.error("Error fetching user:", error);
     res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+router.post("/generate-insight/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const stats = await getUserStats(userId);
+
+    const prompt = `
+You are an AI assistant summarizing user engagement stats.
+
+Based on the stats below, generate 2–3 insightful, friendly notifications to the user about how their content is performing. Focus on interesting highlights — like big saves, top comments, trends, or standouts.
+
+Each insight should be returned as a JSON object with:
+- "text": the natural language notification text,
+- "fileId": if the insight relates to a file (use the _id from the data),
+- "commentId": if the insight relates to a comment (use the _id from the data).
+
+Only include "fileId" or "commentId" if it’s directly relevant.
+
+Respond with a JSON array.
+
+Data:
+${JSON.stringify(stats, null, 2)}
+`;
+
+    const aiResponse = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+    });
+
+    const insightsArray = JSON.parse(
+      aiResponse.choices[0].message.content.trim()
+    );
+
+    if (!Array.isArray(insightsArray) || insightsArray.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "AI response did not contain valid insights." });
+    }
+
+    const previewInsight = insightsArray[0];
+    const { text, fileId, commentId } = previewInsight;
+
+    if (!text) {
+      return res
+        .status(400)
+        .json({ message: "No valid preview text from AI." });
+    }
+
+    const notification = await notificationModel.create({
+      recipient: userId,
+      file: fileId || undefined,
+      commentReference: commentId || undefined,
+      messageBy: "AI Assistant",
+      preview: text,
+      isInsight: true,
+    });
+
+    res.json({
+      message: "AI-generated insight saved as notification",
+      notification,
+    });
+  } catch (error) {
+    console.error("Error generating insights:", error);
+    res.status(500).json({ message: "Error generating insights" });
   }
 });
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
 import CommentItem from "./CommentItem";
-import socket from "./socketService";
-import { useNotifications } from "./NotificationsContext";
+import socket from "../socketService";
+import { useNotifications } from "../ContextProviders/NotificationsContext";
+import { useUser } from "../ContextProviders/UserContext";
 
 type Notification = {
   _id: string;
@@ -14,13 +14,6 @@ type Notification = {
   preview: string;
   commentReference: string;
 };
-
-interface DecodedToken {
-  id: string;
-  name: string;
-  exp: number;
-  iat: number;
-}
 
 interface Comment {
   id: string;
@@ -50,8 +43,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const [newComment, setNewComment] = useState("");
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const [fileId, setFileId] = useState<string>("");
-  const [userId, setUserId] = useState<string | null>(null);
-  const [username, setUserName] = useState<string | null>(null);
+  const { user } = useUser();
   const [profilePictureUrl, setProfilePicture] = useState<string | null>(null);
   const [scrollToPreview, setScrollToPreview] = useState(false);
   const [netVotes, setNetVotes] = useState<number>(0);
@@ -64,18 +56,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         const fetchedFileId = await getFileIdFromFilename(filename);
         if (!fetchedFileId) return;
         setFileId(fetchedFileId);
-
-        const token = localStorage.getItem("token");
-        if (!token) return;
-        const decoded: DecodedToken = jwtDecode(token);
-        setUserId(decoded.id);
-
-        const [name, profileUrl] = await Promise.all([
-          fetchUserName(decoded.id),
-          fetchProfilePicture(decoded.id),
-        ]);
-        if (name) setUserName(name);
-        if (profileUrl) setProfilePicture(profileUrl);
+        if (user?._id) {
+          const profileUrl = await fetchProfilePicture(user._id);
+          if (profileUrl) setProfilePicture(profileUrl);
+        }
       } catch (err) {
         console.error("Initialization error:", err);
       }
@@ -85,10 +69,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   }, [filename]);
 
   useEffect(() => {
-    if (userId) {
-      socket.emit("register", userId);
+    if (user?._id) {
+      socket.emit("register", user?._id);
     }
-  }, [userId]);
+  }, [user?._id]);
 
   useEffect(() => {
     socket.on("receiveComment", (comment) => {
@@ -229,18 +213,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     }
   };
 
-  const fetchUserName = async (userId: string): Promise<void | null> => {
-    try {
-      const response = await fetch(`http://localhost:5000/user/${userId}`);
-      if (!response.ok) throw new Error("Failed to fetch user details.");
-      const data = await response.json();
-      setUserName(data.name);
-    } catch (error) {
-      console.error("Error fetching user name:", error);
-      return null;
-    }
-  };
-
   const fetchProfilePicture = async (userId: string) => {
     try {
       const res = await fetch(
@@ -256,17 +228,17 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
   const addComment = async (text: string, parentId: string | null = null) => {
     try {
-      if (!fileId || !userId || !username)
+      if (!fileId || !user?._id || !user.name)
         throw new Error("Missing user or file info.");
       const response = await fetch("http://localhost:5000/comment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fileId,
-          userId,
+          userId: user._id,
           parentId,
           content: text,
-          username,
+          username: user.name,
           profilePictureUrl,
           netVotes,
         }),

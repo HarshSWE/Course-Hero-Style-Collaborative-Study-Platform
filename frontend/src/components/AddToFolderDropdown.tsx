@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 
 interface Folder {
   _id: string;
@@ -80,7 +81,14 @@ const AddToFolderDropdown: React.FC<AddToFolderDropdownProps> = ({
                 onClick={() => handleAddToFolder(folder._id)}
                 className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
               >
-                {folder.name}
+                <button
+                  key={folder._id}
+                  onClick={() => handleAddToFolder(folder._id)}
+                  className="flex items-center justify-between w-full text-left px-4 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <span>{folder.name}</span>
+                  <FolderOpenIcon fontSize="small" className="text-blue-500" />
+                </button>
               </button>
             ))
         )}

@@ -2,7 +2,7 @@ import React, { ChangeEvent } from "react";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import { useProfileImage } from "./ProfileImageContext";
+import { useProfileImage } from "./ContextProviders/ProfileImageContext";
 
 const ProfilePicture: React.FC = () => {
   const { image, setImage } = useProfileImage();

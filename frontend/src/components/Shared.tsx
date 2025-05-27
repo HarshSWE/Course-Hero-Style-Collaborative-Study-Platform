@@ -1,18 +1,15 @@
 import { useEffect, useState } from "react";
-import DeleteIcon from "@mui/icons-material/Delete";
-import IconButton from "@mui/material/IconButton";
-import { PhotoProvider, PhotoView } from "react-photo-view";
-import ConfirmDeleteModal from "./ConfirmDeleteModal";
-import InsertCommentIcon from "@mui/icons-material/InsertComment";
-import CommentsModal from "./CommentsModal";
-import { useNotifications } from "./NotificationsContext";
+import ConfirmDeleteModal from "./Modals/ConfirmDeleteModal";
+import CommentsModal from "./Modals/CommentsModal";
+import { useNotifications } from "./ContextProviders/NotificationsContext";
+import FileCard from "./FileCard";
 
 interface File {
   _id: string;
-  originalname?: string;
+  originalname: string;
   filename: string;
-  course?: string;
-  school?: string;
+  course: string;
+  school: string;
 }
 
 const Shared = () => {
@@ -26,7 +23,7 @@ const Shared = () => {
   const [activeFileForComments, setActiveFileForComments] =
     useState<File | null>(null);
   const [loading, setLoading] = useState(true);
-  const { notifications, setNotifications } = useNotifications();
+  const { notifications } = useNotifications();
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -117,7 +114,7 @@ const Shared = () => {
           placeholder="Search files..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-1 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-black"
+          className="border border-gray-300 rounded-md px-3 py-1 text-sm w-48 focus:outline-none focus:ring-0 hover:border-black"
         />
       </div>
 
@@ -131,50 +128,12 @@ const Shared = () => {
               key={file._id}
               className="relative border border-gray-300 rounded-lg shadow hover:shadow-lg transition cursor-pointer hover:border-black"
             >
-              <InsertCommentIcon
-                fontSize="small"
-                onClick={() => handleCommentClick(file)}
-                className="absolute top-2 left-1/2 transform -translate-x-1/2 text-blue-500 cursor-pointer hover:text-blue-600"
+              <FileCard
+                file={file}
+                fileUrl={fileUrl}
+                onCommentClick={() => handleCommentClick(file)}
+                onDeleteClick={(file) => handleDeleteClick(file)}
               />
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteClick(file);
-                }}
-                className="absolute top-2 right-2 text-red-500 hover:text-red-600"
-                size="small"
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-
-              <div className="p-4">
-                <p className="text-sm text-black-500">
-                  {file.originalname ?? cleanFileName(file.filename)}
-                </p>
-                <p className="text-sm text-black-500">
-                  {file.course} · {file.school}
-                </p>
-              </div>
-
-              {ext === "pdf" ? (
-                <iframe
-                  src={fileUrl}
-                  title={file.filename}
-                  className="w-11/12 h-80 object-contain border-t mx-auto"
-                />
-              ) : ext?.match(/(jpg|jpeg|png|gif)/i) ? (
-                <PhotoProvider>
-                  <PhotoView src={fileUrl}>
-                    <div>
-                      <img src={fileUrl} alt={file.filename} />
-                    </div>
-                  </PhotoView>
-                </PhotoProvider>
-              ) : (
-                <div className="p-4 text-gray-500 text-sm border-t">
-                  No preview available for this file type
-                </div>
-              )}
             </div>
           );
         })}

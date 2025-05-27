@@ -46,4 +46,21 @@ router.patch("/mark-as-read/:id", async (req, res) => {
   }
 });
 
+router.get("/insights/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const insights = await notificationModel
+      .find({
+        recipient: userId,
+        isInsight: true,
+      })
+      .sort({ createdAt: -1 });
+
+    res.json(insights);
+  } catch (error) {
+    console.error("Error fetching insights:", error);
+    res.status(500).json({ message: "Failed to fetch insights" });
+  }
+});
+
 export default router;

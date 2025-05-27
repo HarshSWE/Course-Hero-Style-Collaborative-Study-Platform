@@ -8,8 +8,9 @@ const notificationSchema = new mongoose.Schema({
   },
   file: { type: mongoose.Schema.Types.ObjectId, ref: "File", required: true },
   messageBy: { type: String, required: true },
-  preview: { type: String }, // <-- add this
+  preview: { type: String },
   isRead: { type: Boolean, default: false },
+  isInsight: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   commentReference: {
     type: mongoose.Schema.Types.ObjectId,

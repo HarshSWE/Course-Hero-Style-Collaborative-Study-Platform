@@ -47,7 +47,7 @@ export const NotificationsProvider = ({
   children: ReactNode;
 }) => {
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
-  const [notificationsCount, setNotificationsCount] = useState<number>(0);
+  const [notificationsCount, setNotificationsCount] = useState(0);
 
   const refreshNotifications = async () => {
     const token = localStorage.getItem("token");

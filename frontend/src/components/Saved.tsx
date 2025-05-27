@@ -1,16 +1,15 @@
 import { useEffect, useState, useRef } from "react";
-import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
-import { PhotoProvider, PhotoView } from "react-photo-view";
-import ConfirmDeleteModal from "./ConfirmDeleteModal";
-import InsertCommentIcon from "@mui/icons-material/InsertComment";
-import CommentsModal from "./CommentsModal";
-import { useNotifications } from "./NotificationsContext";
+import ConfirmDeleteModal from "./Modals/ConfirmDeleteModal";
+import CommentsModal from "./Modals/CommentsModal";
+import { useNotifications } from "./ContextProviders/NotificationsContext";
 import AddIcon from "@mui/icons-material/Add";
-import CreateFolderModal from "./CreateFolderModal";
+import CreateFolderModal from "./Modals/CreateFolderModal";
 import AddToFolderDropdown from "./AddToFolderDropdown";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
-import { useFolderContext } from "./FolderContext";
+import { useFolderContext } from "./ContextProviders/FolderContext";
+import FileCard from "./FileCard";
+import useClickOutside from "./Hooks/useClickOutside";
 
 interface File {
   _id: string;
@@ -44,33 +43,20 @@ const Saved = () => {
 
   const { notifications } = useNotifications();
 
-  // Ref for the dropdown container to detect outside clicks
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     fetchBookmarkedFiles();
     fetchFolders();
   }, []);
 
-  // Close dropdown if click outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setFolderDropDown(null);
-      }
-    }
-
-    if (folderDropDown !== null) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [folderDropDown]);
+  useClickOutside(
+    dropdownRef,
+    () => {
+      setFolderDropDown(null);
+    },
+    folderDropDown !== null
+  );
 
   const handleDeleteClick = (file: File) => {
     if (dontAskAgain) {
@@ -146,6 +132,14 @@ const Saved = () => {
 
       if (!res.ok) throw new Error("Failed to unbookmark");
 
+      try {
+        await fetch(`http://localhost:5000/file/${fileId}/unsave`, {
+          method: "PUT",
+        });
+      } catch (unsaveErr) {
+        console.error("Failed to decrement save count:", unsaveErr);
+      }
+
       setBookmarkedFiles((prev) => prev.filter((file) => file._id !== fileId));
     } catch (err) {
       console.error("Error unbookmarking file:", err);
@@ -163,9 +157,6 @@ const Saved = () => {
 
   if (loading)
     return <div className="text-center p-4">Loading saved files...</div>;
-
-  // if (bookmarkedFiles.length === 0)
-  //   return <div className="text-center p-4">No files saved yet.</div>;
 
   return (
     <div className="p-6">
@@ -185,7 +176,7 @@ const Saved = () => {
           placeholder="Search files..."
           value={searchTerm}
           onChange={handleSearchChange}
-          className="border border-gray-300 rounded-md px-3 py-1 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-black"
+          className="border border-gray-300 rounded-md px-3 py-1 text-sm w-48 focus:outline-none focus:ring-0 hover:border-black"
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
@@ -231,51 +222,12 @@ const Saved = () => {
                     </IconButton>
                   )}
                 </div>
-
-                <InsertCommentIcon
-                  fontSize="small"
-                  className="absolute top-2 left-1/2 transform -translate-x-1/2 text-blue-500 cursor-pointer hover:text-blue-600"
-                  onClick={() => setActiveFileForComments(file)}
+                <FileCard
+                  file={file}
+                  fileUrl={fileUrl}
+                  onCommentClick={() => setActiveFileForComments(file)}
+                  onDeleteClick={(file) => handleDeleteClick(file)}
                 />
-                <IconButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(file);
-                  }}
-                  className="absolute top-2 right-2 text-red-500 hover:text-red-600"
-                  size="small"
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-
-                <div className="p-4">
-                  <p className="font-semibold text-lg">{file.originalname}</p>
-                  <p className="text-sm text-black-500">
-                    {file.filename.replace(/^\d+-/, "")}
-                  </p>
-                  <p className="text-sm text-black-500">
-                    {file.course} · {file.school}
-                  </p>
-                </div>
-                {file.filename.endsWith(".pdf") ? (
-                  <iframe
-                    src={fileUrl}
-                    title={file.originalname}
-                    className="w-11/12 h-80 object-contain border-t mx-auto"
-                  />
-                ) : file.filename.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                  <PhotoProvider>
-                    <PhotoView src={fileUrl}>
-                      <div>
-                        <img src={fileUrl} alt={file.originalname} />
-                      </div>
-                    </PhotoView>
-                  </PhotoProvider>
-                ) : (
-                  <div className="p-4 text-gray-500 text-sm border-t">
-                    No preview available for this file type
-                  </div>
-                )}
               </div>
             );
           })
@@ -298,15 +250,12 @@ const Saved = () => {
             <FolderOpenIcon className="text-blue-500 w-10 h-10" />
             <span className="text-sm font-medium">All</span>
           </div>
-          {folders.length === 0 ? (
-            <p className="text-gray-600 text-sm">No folders created yet.</p>
-          ) : (
+          {folders.length > 0 &&
             folders.map((folder) => (
               <div
                 key={folder._id}
                 onClick={() => {
                   if (selectedFolderId === folder._id) {
-                    // If already selected, reset to show all
                     setSelectedFolderId(null);
                     fetchBookmarkedFiles();
                   } else {
@@ -323,8 +272,7 @@ const Saved = () => {
                 <FolderOpenIcon className="text-blue-500 w-10 h-10" />
                 <span className="text-base font-semibold">{folder.name}</span>
               </div>
-            ))
-          )}
+            ))}
         </div>
       </div>
 

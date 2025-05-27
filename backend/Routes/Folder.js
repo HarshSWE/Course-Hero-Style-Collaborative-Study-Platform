@@ -5,7 +5,6 @@ import { fileModel } from "../models/file.model.js";
 
 const router = express.Router();
 
-// Make folder
 router.post("/", authenticateUser, async (req, res) => {
   try {
     const { name } = req.body;
@@ -29,7 +28,6 @@ router.post("/", authenticateUser, async (req, res) => {
   }
 });
 
-// Save file to folder
 router.post("/:folderId/file", authenticateUser, async (req, res) => {
   try {
     const { folderId } = req.params;
@@ -72,7 +70,6 @@ router.post("/:folderId/file", authenticateUser, async (req, res) => {
   }
 });
 
-// get all folders
 router.get("/all", authenticateUser, async (req, res) => {
   try {
     const folders = await folderModel
@@ -85,7 +82,6 @@ router.get("/all", authenticateUser, async (req, res) => {
   }
 });
 
-// get files from a folder
 router.get("/:folderId/files", async (req, res) => {
   try {
     const { folderId } = req.params;

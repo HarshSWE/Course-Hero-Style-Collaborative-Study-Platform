@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useProfileImage } from "./ProfileImageContext";
-import { useNotifications } from "./NotificationsContext";
+import { useProfileImage } from "../ContextProviders/ProfileImageContext";
+import { useNotifications } from "../ContextProviders/NotificationsContext";
+import { useUser } from "../ContextProviders/UserContext";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -9,6 +10,8 @@ const Login = () => {
   const { refreshProfilePicture } = useProfileImage();
   const { refreshNotifications, refreshNotificationsCount } =
     useNotifications();
+
+  const { refreshUser } = useUser();
 
   const navigate = useNavigate();
 
@@ -42,6 +45,7 @@ const Login = () => {
         await refreshProfilePicture();
         await refreshNotifications();
         await refreshNotificationsCount();
+        await refreshUser();
 
         navigate("/");
       } else {

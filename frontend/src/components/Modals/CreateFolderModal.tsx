@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useFolderContext } from "./FolderContext";
+import React from "react";
+import { useFolderContext } from "../ContextProviders/FolderContext";
 
 interface CreateFolderModalProps {
   isOpen: boolean;

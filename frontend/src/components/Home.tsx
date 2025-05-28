@@ -85,8 +85,11 @@ const Home = () => {
           },
         });
         const data = await res.json();
+
         const ids = data.map((file: any) => file._id);
+
         setBookmarkedFiles(new Set(ids));
+        console.log("bookmarked files: ", bookmarkedFiles);
       } catch (err) {
         console.error("Error fetching bookmarks:", err);
       }
@@ -148,24 +151,11 @@ const Home = () => {
         },
       });
 
-      if (!res.ok) throw new Error("Failed to toggle bookmark");
-
-      const saveRoute = isBookmarked
-        ? `http://localhost:5000/file/${fileId}/unsave`
-        : `http://localhost:5000/file/${fileId}/save`;
-
-      try {
-        await fetch(saveRoute, {
-          method: "PUT",
-        });
-      } catch (saveErr) {
-        console.error(
-          isBookmarked
-            ? "Failed to decrement save count"
-            : "Failed to increment save count",
-          saveErr
-        );
+      if (!res.ok) {
+        throw new Error("Failed to toggle bookmark");
       }
+
+      const data = await res.json();
 
       setBookmarkedFiles((prev) => {
         const newSet = new Set(prev);
@@ -178,6 +168,8 @@ const Home = () => {
         }
         return newSet;
       });
+
+      console.log(data.message);
     } catch (error) {
       console.error("Bookmark toggle error:", error);
     }

@@ -1,8 +1,6 @@
 import express from "express";
 import { userModel } from "../models/user.model.js";
-import { commentModel } from "../models/comment.model.js";
 import { authenticateUser } from "../middleware/authmiddleware.js";
-import { fileModel } from "../models/file.model.js";
 import { notificationModel } from "../models/notification.model.js";
 import { getUserStats } from "../utils/statsHelper.js";
 

@@ -93,7 +93,11 @@ const Saved = () => {
         },
       });
       const data = await res.json();
-      setBookmarkedFiles(data);
+      setBookmarkedFiles(
+        data.filter(
+          (file: null | undefined) => file !== null && file !== undefined
+        )
+      );
     } catch (err) {
       console.error("Error fetching bookmarked files:", err);
     } finally {
@@ -132,15 +136,9 @@ const Saved = () => {
 
       if (!res.ok) throw new Error("Failed to unbookmark");
 
-      try {
-        await fetch(`http://localhost:5000/file/${fileId}/unsave`, {
-          method: "PUT",
-        });
-      } catch (unsaveErr) {
-        console.error("Failed to decrement save count:", unsaveErr);
-      }
-
-      setBookmarkedFiles((prev) => prev.filter((file) => file._id !== fileId));
+      setBookmarkedFiles((prev) =>
+        prev.filter((file) => file && file._id !== fileId)
+      );
     } catch (err) {
       console.error("Error unbookmarking file:", err);
     }

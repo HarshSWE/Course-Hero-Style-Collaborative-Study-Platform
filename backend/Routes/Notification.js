@@ -18,7 +18,6 @@ router.get("/count", authenticateUser, async (req, res) => {
   }
 });
 
-// gets all notifications
 router.get("/", authenticateUser, async (req, res) => {
   console.log("Authenticated User:", req.user);
   try {

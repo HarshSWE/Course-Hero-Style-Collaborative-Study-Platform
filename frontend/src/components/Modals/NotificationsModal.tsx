@@ -180,7 +180,6 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
               )}
             </div>
 
-            {/* Comment Modal */}
             {showCommentSection && filename && (
               <CommentsModal
                 isOpen={true}

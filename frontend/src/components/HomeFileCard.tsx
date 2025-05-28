@@ -1,4 +1,4 @@
-import React, { RefObject, useEffect } from "react";
+import React, { RefObject, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookmark } from "@fortawesome/free-solid-svg-icons";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
@@ -37,18 +37,49 @@ const HomeFileCard: React.FC<HomeFileCardProps> = ({
   notifications,
   onClose,
 }) => {
+  const [stats, setStats] = useState<{ views: number; saves: number } | null>(
+    null
+  );
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (selectedFile?._id) {
+        try {
+          const res = await fetch(
+            `http://localhost:5000/file/${selectedFile._id}/stats`
+          );
+          const data = await res.json();
+          setStats({ views: data.views, saves: data.saves });
+        } catch (err) {
+          console.error("Failed to fetch file stats", err);
+        }
+      }
+    };
+
+    if (isOpen) {
+      fetchStats();
+    }
+  }, [isOpen, selectedFile]);
+
   useEffect(() => {
     if (isOpen) {
       console.log("Bookmarked files:", bookmarkedFiles);
     }
   }, [isOpen, bookmarkedFiles]);
+
   if (!isOpen || !selectedFile) return null;
+
+  const pluralize = (count: number, singular: string, plural: string) =>
+    count === 1 ? `${count} ${singular}` : `${count} ${plural}`;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg w-full max-w-5xl h-[90vh] relative flex flex-col">
         {folderDropdown && selectedBookmarkFileId === selectedFile._id && (
-          <div ref={dropdownRef}>
+          <div
+            ref={dropdownRef}
+            className="absolute z-[9999] top-[5%] left-[5%]"
+          >
             <AddToFolderDropdown
               fileId={selectedFile._id}
               onFileAdded={() => {
@@ -107,6 +138,17 @@ const HomeFileCard: React.FC<HomeFileCardProps> = ({
             </div>
           ) : (
             <p>Preview not available for this file type.</p>
+          )}
+
+          {stats && (
+            <>
+              <div className="absolute bottom-2 left-4 text-gray-600 text-sm">
+                {pluralize(stats.saves, "save", "saves")}
+              </div>
+              <div className="absolute bottom-2 right-4 text-gray-600 text-sm">
+                {pluralize(stats.views, "view", "views")}
+              </div>
+            </>
           )}
 
           {showComments && (

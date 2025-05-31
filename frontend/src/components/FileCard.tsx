@@ -15,7 +15,7 @@ type FileCardProps = {
   file: File;
   fileUrl: string;
   onCommentClick: (file: File) => void;
-  onDeleteClick: (file: File) => void;
+  onDeleteClick?: (file: File) => void;
 };
 
 export default function FileCard({
@@ -28,22 +28,32 @@ export default function FileCard({
 
   return (
     <div className="relative border rounded-lg overflow-hidden shadow-sm">
-      <InsertCommentIcon
-        fontSize="small"
-        className="absolute top-2 left-1/2 transform -translate-x-1/2 text-blue-500 cursor-pointer hover:text-blue-600"
-        onClick={() => onCommentClick(file)}
-      />
-
-      <IconButton
-        onClick={(e) => {
-          e.stopPropagation();
-          onDeleteClick(file);
-        }}
-        className="absolute top-2 right-2 text-red-500 hover:text-red-600"
-        size="small"
-      >
-        <DeleteIcon fontSize="small" />
-      </IconButton>
+      {/* Top icon */}
+      {onDeleteClick ? (
+        <>
+          <InsertCommentIcon
+            fontSize="small"
+            className="absolute top-2 left-1/2 transform -translate-x-1/2 text-blue-500 cursor-pointer hover:text-blue-600"
+            onClick={() => onCommentClick(file)}
+          />
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteClick(file);
+            }}
+            className="absolute top-2 right-2 text-red-500 hover:text-red-600"
+            size="small"
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </>
+      ) : (
+        <InsertCommentIcon
+          fontSize="small"
+          className="absolute top-2 right-2 text-blue-500 cursor-pointer hover:text-blue-600"
+          onClick={() => onCommentClick(file)}
+        />
+      )}
 
       <div className="p-4">
         <p className="font-semibold text-lg">{file.originalname}</p>

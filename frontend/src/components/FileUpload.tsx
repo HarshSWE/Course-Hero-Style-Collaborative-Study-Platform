@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import WebViewer from "@pdftron/webviewer";
 import { motion, AnimatePresence } from "framer-motion";
 
 type FileUploadProps = {
@@ -11,6 +13,7 @@ type FileUploadProps = {
 };
 
 type UploadedFile = {
+  id: string;
   file: File;
   serverFilename?: string;
   course: string;
@@ -20,15 +23,24 @@ type UploadedFile = {
 const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [shared, setShared] = useState(false);
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [expandedIndex, setExpandedIndex] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [editingFile, setEditingFile] = useState<UploadedFile | null>(null);
+
+  const viewerRef = useRef<HTMLDivElement>(null);
 
   const handleFileChange = (file: File) => {
-    setFiles((prev) => [...prev, { file, course: "", school: "" }]);
+    const newFile: UploadedFile = {
+      id: crypto.randomUUID(),
+      file,
+      course: "",
+      school: "",
+    };
+    setFiles((prev) => [...prev, newFile]);
   };
 
-  const removeFile = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+  const removeFile = (id: string) => {
+    setFiles((prev) => prev.filter((file) => file.id !== id));
   };
 
   const clearAllFiles = (e: React.MouseEvent) => {
@@ -36,17 +48,17 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
     setFiles([]);
   };
 
-  const toggleExpand = (index: number) => {
-    setExpandedIndex((prev) => (prev === index ? null : index));
+  const toggleExpand = (id: string) => {
+    setExpandedIndex((prev) => (prev === id ? null : id));
   };
 
   const handleInputChange = (
-    index: number,
+    id: string,
     field: "course" | "school",
     value: string
   ) => {
     setFiles((prev) =>
-      prev.map((file, i) => (i === index ? { ...file, [field]: value } : file))
+      prev.map((file) => (file.id === id ? { ...file, [field]: value } : file))
     );
   };
 
@@ -108,6 +120,112 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
     multiple: true,
   });
 
+  const convertImageToPDF = async (imageFile: File): Promise<File> => {
+    const img = new Image();
+    img.src = URL.createObjectURL(imageFile);
+
+    await new Promise((resolve) => (img.onload = resolve));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    const ctx = canvas.getContext("2d");
+    if (ctx) ctx.drawImage(img, 0, 0);
+
+    return new Promise<File>((resolve) => {
+      canvas.toBlob(async (blob) => {
+        const pdfBlob = await createPdfFromImageBlob(blob!);
+        resolve(
+          new File([pdfBlob], imageFile.name.replace(/\.\w+$/, ".pdf"), {
+            type: "application/pdf",
+          })
+        );
+      }, "image/jpeg");
+    });
+  };
+
+  const createPdfFromImageBlob = async (blob: Blob): Promise<Blob> => {
+    const pdfLib = await import("pdf-lib");
+    const { PDFDocument } = pdfLib;
+
+    const pdfDoc = await PDFDocument.create();
+    const imageBytes = await blob.arrayBuffer();
+    const jpgImage = await pdfDoc.embedJpg(imageBytes);
+
+    const page = pdfDoc.addPage([jpgImage.width, jpgImage.height]);
+    page.drawImage(jpgImage, { x: 0, y: 0 });
+
+    const pdfBytes = await pdfDoc.save();
+    return new Blob([pdfBytes], { type: "application/pdf" });
+  };
+
+  useEffect(() => {
+    if (!editingFile || !viewerRef.current) return;
+
+    const loadFile = editingFile.file;
+    const fileUrl = URL.createObjectURL(loadFile);
+    console.log("Loading file in WebViewer:", loadFile);
+
+    let viewerInstance: any;
+
+    WebViewer(
+      {
+        path: "/lib/webviewer",
+        initialDoc: fileUrl,
+        licenseKey: process.env.REACT_APP_PDFTRON_KEY,
+        ui: "legacy",
+      },
+      viewerRef.current
+    ).then((instance) => {
+      viewerInstance = instance;
+
+      instance.UI.loadDocument(fileUrl, {
+        filename: loadFile.name,
+      });
+
+      instance.UI.setHeaderItems((header) => {
+        header.push({
+          type: "actionButton",
+          img: '<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox="0 0 24 24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zM12 19c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>',
+          title: "Save",
+          onClick: async () => {
+            const { documentViewer, annotationManager } = instance.Core;
+            const xfdfString = await annotationManager.exportAnnotations();
+            const doc = await documentViewer.getDocument().getFileData({
+              xfdfString,
+              downloadType: "pdf",
+            });
+
+            const annotatedBlob = new Blob([doc], { type: "application/pdf" });
+            const updatedFile = new File(
+              [annotatedBlob],
+              editingFile!.file.name,
+              {
+                type: "application/pdf",
+              }
+            );
+
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === editingFile!.id ? { ...f, file: updatedFile } : f
+              )
+            );
+
+            setEditingFile(null);
+          },
+        });
+      });
+    });
+
+    return () => {
+      if (viewerInstance) {
+        viewerInstance.UI.closeDocument();
+      }
+      URL.revokeObjectURL(fileUrl);
+    };
+  }, [editingFile]);
+
   return (
     <div className="w-full min-h-screen flex items-center justify-center">
       <div
@@ -145,6 +263,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
             </motion.div>
           )}
         </AnimatePresence>
+
         <AnimatePresence>
           {errorMessage && (
             <motion.div
@@ -171,10 +290,10 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
             </div>
           ) : (
             <div className="mt-6 w-full flex flex-wrap gap-x-4 gap-y-6 justify-start items-start">
-              {files.map(({ file, course, school }, index) => {
+              {files.map(({ id, file, course, school }, index) => {
                 const fileUrl = URL.createObjectURL(file);
                 const isImage = file.type.startsWith("image/");
-                const isExpanded = expandedIndex === index;
+                const isExpanded = expandedIndex === id;
 
                 return (
                   <div
@@ -184,7 +303,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                     <IconButton
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeFile(index);
+                        removeFile(id);
                       }}
                       className="absolute top-1 left-1 bg-red-500 text-white w-5 h-5 rounded-full shadow-md hover:bg-red-600 flex items-center justify-center z-10"
                       title="Delete file"
@@ -193,9 +312,34 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                     </IconButton>
 
                     <IconButton
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const fileItem = files[index];
+                        if (fileItem.file.type.startsWith("image/")) {
+                          const pdfFile = await convertImageToPDF(
+                            fileItem.file
+                          );
+                          setEditingFile({ ...fileItem, file: pdfFile });
+
+                          setFiles((prev) =>
+                            prev.map((f, i) =>
+                              i === index ? { ...f, file: pdfFile } : f
+                            )
+                          );
+                        } else {
+                          setEditingFile(fileItem);
+                        }
+                      }}
+                      className="absolute top-1 left-15 bg-green-500 text-white w-5 h-5 rounded-full shadow-md hover:bg-green-600 flex items-center justify-center z-10"
+                      title="Edit file"
+                    >
+                      <EditIcon style={{ fontSize: 12 }} />
+                    </IconButton>
+
+                    <IconButton
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleExpand(index);
+                        toggleExpand(id);
                       }}
                       className="absolute top-1 right-1 bg-blue-500 text-white w-5 h-5 rounded-full shadow-md hover:bg-blue-600 flex items-center justify-center z-10"
                       title="Add details"
@@ -249,7 +393,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                           placeholder="Course"
                           value={course || ""}
                           onChange={(e) =>
-                            handleInputChange(index, "course", e.target.value)
+                            handleInputChange(id, "course", e.target.value)
                           }
                           className="text-xs px-2 py-1 border rounded w-full"
                         />
@@ -258,7 +402,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                           placeholder="School"
                           value={school || ""}
                           onChange={(e) =>
-                            handleInputChange(index, "school", e.target.value)
+                            handleInputChange(id, "school", e.target.value)
                           }
                           className="text-xs px-2 py-1 border rounded w-full"
                         />
@@ -271,6 +415,20 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
           )}
         </div>
       </div>
+
+      {editingFile && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+          onClick={() => setEditingFile(null)}
+        >
+          <div
+            className="w-[90vw] h-[90vh] bg-white rounded-lg overflow-hidden relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div ref={viewerRef} className="w-full h-full" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -43,6 +43,60 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
     setNotificationsCount,
   } = useNotifications();
 
+  const handleNotificationClick = (
+    notif: any,
+    isInsight: boolean,
+    removeFromList: (id: string) => void
+  ) => {
+    fetch(`http://localhost:5000/notifications/mark-as-read/${notif._id}`, {
+      method: "PATCH",
+    })
+      .then(() => {
+        setSelectedPreview(notif.preview);
+        setNotifCommentId(notif.commentReference);
+        fetchFilename(notif.file);
+        if (isInsight) {
+          setShowCommentSection(true);
+        }
+        removeFromList(notif._id);
+        if (!isInsight) {
+          setNotificationsCount((prev) => Math.max(prev - 1, 0));
+        }
+      })
+      .catch((err) => console.error("Failed to mark as read", err));
+  };
+
+  const renderNotificationList = (
+    items: any[],
+    isInsight: boolean,
+    removeFromList: (id: string) => void,
+    emptyText: string
+  ) => {
+    return items.length > 0 ? (
+      items.map((item) => (
+        <div
+          key={item._id}
+          className="px-4 py-2 border-b hover:bg-gray-100 cursor-pointer"
+          onClick={() =>
+            handleNotificationClick(item, isInsight, removeFromList)
+          }
+        >
+          <div className="font-medium">{item.messageBy}</div>
+          {item.preview && (
+            <div className="text-sm text-gray-700 italic mt-1">
+              {item.preview}
+            </div>
+          )}
+          <div className="text-xs text-gray-500">
+            {new Date(item.createdAt).toLocaleString()}
+          </div>
+        </div>
+      ))
+    ) : (
+      <div className="p-4 text-gray-500 text-center">{emptyText}</div>
+    );
+  };
+
   return (
     <div className="relative">
       <NotificationsIcon
@@ -84,100 +138,23 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
             </div>
 
             <div className="p-2">
-              {activeTab === "notifications" ? (
-                notifications.length > 0 ? (
-                  notifications.map((notif) => (
-                    <div
-                      key={notif._id}
-                      className="px-4 py-2 border-b hover:bg-gray-100 cursor-pointer"
-                      onClick={() => {
-                        fetch(
-                          `http://localhost:5000/notifications/mark-as-read/${notif._id}`,
-                          {
-                            method: "PATCH",
-                          }
-                        )
-                          .then(() => {
-                            setSelectedPreview(notif.preview);
-                            setNotifCommentId(notif.commentReference);
-                            fetchFilename(notif.file);
-                            setNotifications((prev) =>
-                              prev.filter((n) => n._id !== notif._id)
-                            );
-                            setNotificationsCount((prev) =>
-                              Math.max(prev - 1, 0)
-                            );
-                          })
-                          .catch((err) =>
-                            console.error("Failed to mark as read", err)
-                          );
-                      }}
-                    >
-                      <div className="font-medium">{notif.messageBy}</div>
-                      {notif.preview && (
-                        <div className="text-sm text-gray-700 italic mt-1">
-                          {notif.preview}
-                        </div>
-                      )}
-                      <div className="text-xs text-gray-500">
-                        {new Date(notif.createdAt).toLocaleString()}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-4 text-gray-500 text-center">
-                    No notifications
-                  </div>
-                )
-              ) : (
-                <div>
-                  {insights.length > 0 ? (
-                    insights.map((insight) => (
-                      <div
-                        key={insight._id}
-                        className="px-4 py-2 border-b hover:bg-gray-100 cursor-pointer"
-                        onClick={() => {
-                          fetch(
-                            `http://localhost:5000/notifications/mark-as-read/${insight._id}`,
-                            {
-                              method: "PATCH",
-                            }
-                          )
-                            .then(() => {
-                              setSelectedPreview(insight.preview);
-                              setNotifCommentId(insight.commentReference);
-                              fetchFilename(insight.file);
-                              setShowCommentSection(true);
-                              setInsights((prev) =>
-                                prev.filter((i) => i._id !== insight._id)
-                              );
-                            })
-                            .catch((err) =>
-                              console.error(
-                                "Failed to mark insight as read",
-                                err
-                              )
-                            );
-                        }}
-                      >
-                        <div className="font-medium">{insight.messageBy}</div>
-                        {insight.preview && (
-                          <div className="text-sm text-gray-700 italic mt-1">
-                            {insight.preview}
-                          </div>
-                        )}
-                        <div className="text-xs text-gray-500">
-                          {new Date(insight.createdAt).toLocaleString()}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-4 text-gray-500 text-center">
-                      No insights
-                    </div>
+              {activeTab === "notifications"
+                ? renderNotificationList(
+                    notifications,
+                    false,
+                    (id) =>
+                      setNotifications((prev) =>
+                        prev.filter((n) => n._id !== id)
+                      ),
+                    "No notifications"
+                  )
+                : renderNotificationList(
+                    insights,
+                    true,
+                    (id) =>
+                      setInsights((prev) => prev.filter((i) => i._id !== id)),
+                    "No insights"
                   )}
-                </div>
-              )}
             </div>
 
             {showCommentSection && filename && (

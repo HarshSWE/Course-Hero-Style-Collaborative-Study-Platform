@@ -113,7 +113,7 @@ ${JSON.stringify(stats, null, 2)}
 `;
 
     const aiResponse = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
     });

@@ -23,7 +23,7 @@ type NotificationsContextType = {
   setNotifications: React.Dispatch<React.SetStateAction<NotificationType[]>>;
   refreshNotifications: () => Promise<void>;
   notificationsCount: number;
-  setNotificationsCount: React.Dispatch<React.SetStateAction<number>>; // 👈 add this
+  setNotificationsCount: React.Dispatch<React.SetStateAction<number>>;
   refreshNotificationsCount: () => Promise<void>;
 };
 

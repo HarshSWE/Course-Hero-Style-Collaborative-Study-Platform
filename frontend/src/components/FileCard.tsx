@@ -28,7 +28,6 @@ export default function FileCard({
 
   return (
     <div className="relative border rounded-lg overflow-hidden shadow-sm">
-      {/* Top icon */}
       {onDeleteClick ? (
         <>
           <InsertCommentIcon

@@ -5,8 +5,16 @@ import mongoose from "mongoose";
 import { authenticateUser } from "../middleware/authmiddleware.js";
 import { fileModel } from "../models/file.model.js";
 import upload from "../middleware/upload.js";
+import OpenAI from "openai";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const router = express.Router();
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 router.get("/fileId/:filename", async (req, res) => {
   try {
@@ -238,6 +246,44 @@ router.get("/:fileId/stats", async (req, res) => {
   } catch (err) {
     console.error("Error fetching file stats:", err);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.post("/chat", async (req, res) => {
+  try {
+    const { content, userMessage } = req.body;
+
+    if (!content || !userMessage) {
+      return res.status(400).json({ error: "Missing content or userMessage." });
+    }
+
+    const prompt = `
+You are an AI assistant. The following is the content extracted from a file:
+
+${content}
+
+User asks: ${userMessage}
+
+Answer the user's question based on the content above.
+`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 500,
+      temperature: 0.2,
+    });
+
+    const botResponse =
+      completion.choices[0].message?.content ||
+      "Sorry, I couldn't generate a response.";
+
+    res.json({ message: botResponse });
+  } catch (error) {
+    console.error("Chatbot error:", error);
+    res.status(500).json({
+      error: "An error occurred while processing the chatbot message.",
+    });
   }
 });
 

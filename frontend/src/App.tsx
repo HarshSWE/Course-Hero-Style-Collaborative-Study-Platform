@@ -12,6 +12,7 @@ import { FolderProvider } from "./components/ContextProviders/FolderContext";
 import { UserProvider } from "./components/ContextProviders/UserContext";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { NotificationsProvider } from "./components/ContextProviders/NotificationsContext";
+import ChatBotModal from "./components/Modals/ChatBotModal";
 
 function App() {
   return (
@@ -38,6 +39,17 @@ function App() {
                 />
                 <Route path="/ProfilePicture" element={<ProfilePicture />} />
                 <Route path="/otpInput" element={<OtpInput />} />
+                <Route
+                  path="/Chatbot"
+                  element={
+                    <ChatBotModal
+                      content="Here is some extracted content from a file or document."
+                      onClose={() => {
+                        console.log("Chatbot closed");
+                      }}
+                    />
+                  }
+                />
               </Routes>
             </Router>
           </NotificationsProvider>

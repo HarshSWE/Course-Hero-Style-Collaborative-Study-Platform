@@ -343,6 +343,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
             username={comment.username}
             profilePictureUrl={comment.profilePictureUrl}
             netVotes={comment.netVotes}
+            currentUserId={user?._id}
           />
           {!collapsedIds.has(comment.id) && renderComments(comment.id)}
         </div>

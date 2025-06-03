@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import { userModel } from "../models/user.model.js";
 import { authenticateUser } from "../middleware/authmiddleware.js";
 import { notificationModel } from "../models/notification.model.js";
@@ -153,6 +154,76 @@ ${JSON.stringify(stats, null, 2)}
   } catch (error) {
     console.error("Error generating insights:", error);
     res.status(500).json({ message: "Error generating insights" });
+  }
+});
+
+router.get("/:userId/is-friend/:friendId", async (req, res) => {
+  const { userId, friendId } = req.params;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(userId) ||
+    !mongoose.Types.ObjectId.isValid(friendId)
+  ) {
+    return res.status(400).json({ message: "Invalid user ID or friend ID." });
+  }
+
+  try {
+    const user = await userModel.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const isFriend = user.friends.includes(friendId);
+
+    return res.status(200).json({ isFriend });
+  } catch (error) {
+    console.error("Error checking friend status:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+});
+
+router.post("/:recipientId/add-friend/:senderId", async (req, res) => {
+  const { recipientId, senderId } = req.params;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(recipientId) ||
+    !mongoose.Types.ObjectId.isValid(senderId)
+  ) {
+    return res
+      .status(400)
+      .json({ message: "Invalid recipient ID or sender ID." });
+  }
+
+  if (recipientId === senderId) {
+    return res
+      .status(400)
+      .json({ message: "Cannot add yourself as a friend." });
+  }
+
+  try {
+    const recipient = await userModel.findById(recipientId);
+    const sender = await userModel.findById(senderId);
+
+    if (!recipient || !sender) {
+      return res
+        .status(404)
+        .json({ message: "Recipient or Sender not found." });
+    }
+
+    if (recipient.friends.includes(senderId)) {
+      return res.status(400).json({ message: "Already friends." });
+    }
+
+    recipient.friends.push(senderId);
+    await recipient.save();
+
+    return res
+      .status(200)
+      .json({ message: "Friend added successfully.", recipient });
+  } catch (error) {
+    console.error("Error adding friend:", error);
+    return res.status(500).json({ message: "Server error." });
   }
 });
 

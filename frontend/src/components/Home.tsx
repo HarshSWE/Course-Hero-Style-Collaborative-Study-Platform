@@ -51,6 +51,8 @@ const Home = () => {
   const [folderDropdown, setFolderDropdown] = useState<boolean | null>(false);
   const [activeTab, setActiveTab] = useState("notifications");
   const [insights, setInsights] = useState<NotificationType[]>([]);
+  const [friendRequests, setFriendRequests] = useState<any[]>([]);
+
   const { user } = useUser();
 
   const [selectedBookmarkFileId, setSelectedBookmarkFileId] = useState<
@@ -113,13 +115,48 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "insights") {
-      fetch(`http://localhost:5000/notifications/insights/${user?._id}`)
-        .then((res) => res.json())
-        .then((data) => setInsights(data))
-        .catch((err) => console.error("Failed to fetch insights", err));
-    }
-  }, [activeTab, user?._id]);
+    const fetchInsights = async () => {
+      try {
+        if (!user?._id) return;
+        const res = await fetch(
+          `http://localhost:5000/notifications/insights/${user._id}`
+        );
+        const data = await res.json();
+        setInsights(data);
+      } catch (err) {
+        console.error("Failed to fetch insights", err);
+      }
+    };
+
+    fetchInsights();
+  }, [user?._id]);
+
+  useEffect(() => {
+    const fetchFriendRequests = async () => {
+      try {
+        const res = await fetch(
+          "http://localhost:5000/notifications/friend-requests",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch friend requests");
+        }
+
+        const data = await res.json();
+        setFriendRequests(data.friendRequests);
+        console.log("Fetched friend requests:", data.friendRequests);
+      } catch (err) {
+        console.error("Error fetching friend requests:", err);
+      }
+    };
+
+    fetchFriendRequests();
+  }, []);
 
   useClickOutside(
     dropdownRef,
@@ -244,6 +281,8 @@ const Home = () => {
             selectedPreview={selectedPreview}
             filename={filename}
             notifCommentId={notifCommentId}
+            friendRequests={friendRequests}
+            setFriendRequests={setFriendRequests}
           />
         </div>
 

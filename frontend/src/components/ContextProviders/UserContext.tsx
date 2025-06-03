@@ -56,7 +56,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!res.ok) throw new Error("Failed to fetch user");
       const data = await res.json();
-
+      // stores mongoDB _id
       setUser({ _id: decoded.id, name: data.name });
     } catch (err) {
       console.error("Error decoding or fetching user:", err);

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
@@ -7,6 +7,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ReplyIcon from "@mui/icons-material/Reply";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import { useUser } from "../ContextProviders/UserContext";
 
 export interface Comment {
   id: string;
@@ -31,6 +33,7 @@ export interface CommentItemProps {
   username: string;
   profilePictureUrl: string | null;
   netVotes: number;
+  currentUserId: string | undefined;
 }
 
 const CommentItem: React.FC<CommentItemProps> = ({
@@ -44,12 +47,36 @@ const CommentItem: React.FC<CommentItemProps> = ({
   username,
   profilePictureUrl,
   netVotes,
+  currentUserId,
 }) => {
   const [replyText, setReplyText] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
   const [commentNetVotes, setCommentNetVotes] = useState(netVotes);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFriend, setIsFriend] = useState(true);
   const token = localStorage.getItem("token");
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (isHovered && currentUserId !== comment.userId) {
+      fetch(
+        `http://localhost:5000/user/${currentUserId}/is-friend/${comment.userId}`
+      )
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("Failed to check friend status");
+          }
+          return res.json();
+        })
+        .then((data) => {
+          setIsFriend(data.isFriend);
+        })
+        .catch((err) => {
+          console.error("Error checking friend status", err);
+        });
+    }
+  }, [isHovered, currentUserId, comment.userId]);
 
   const voteOnComment = async (
     commentId: string,
@@ -124,8 +151,47 @@ const CommentItem: React.FC<CommentItemProps> = ({
     }
   };
 
+  const handleSendFriendRequest = async () => {
+    if (!token || !user) {
+      console.error("User not authenticated");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/notifications/friend-request",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            recipientId: comment.userId,
+            messageBy: user.name,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send friend request");
+      }
+
+      console.log(data.message);
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+    }
+  };
+
   return (
-    <div id={`comment-${comment.id}`} className="mb-2">
+    <div
+      id={`comment-${comment.id}`}
+      className="mb-2"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           {profilePictureUrl ? (
@@ -140,6 +206,16 @@ const CommentItem: React.FC<CommentItemProps> = ({
             </div>
           )}
           <span className="text-gray-500 text-sm">Posted By: {username}</span>
+
+          {/* Friend request icon */}
+          {isHovered && !isFriend && currentUserId !== comment.userId && (
+            <button
+              onClick={handleSendFriendRequest}
+              className="ml-1 text-gray-400 hover:text-gray-600"
+            >
+              <PersonAddIcon fontSize="small" />
+            </button>
+          )}
         </div>
       </div>
 

@@ -44,18 +44,21 @@ router.post("/", async (req, res) => {
 
     const io = getIO();
     const userSockets = getUserSockets();
+
     if (parentId) {
       const parentComment = await commentModel.findById(parentId);
       if (parentComment && parentComment.userId.toString() !== userId) {
         await notificationModel.create({
           commentReference: newComment._id,
           recipient: parentComment.userId,
+          sender: user._id,
+          senderProfilePictureUrl: user.profilePictureUrl || null,
           file: fileId,
           messageBy: `${username} replied to your comment.`,
           preview: content,
         });
-        const recipientSocketId = userSockets[parentComment.userId.toString()];
 
+        const recipientSocketId = userSockets[parentComment.userId.toString()];
         if (recipientSocketId) {
           io.to(recipientSocketId).emit("notification", {
             message: `${username} replied to your comment.`,

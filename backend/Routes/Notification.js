@@ -1,6 +1,8 @@
 import express from "express";
+import mongoose from "mongoose";
 import { notificationModel } from "../models/notification.model.js";
 import { authenticateUser } from "../middleware/authmiddleware.js";
+import { userModel } from "../models/user.model.js";
 
 const router = express.Router();
 
@@ -92,9 +94,15 @@ router.post("/friend-request", authenticateUser, async (req, res) => {
       });
     }
 
+    const senderUser = await userModel.findById(senderId);
+    if (!senderUser) {
+      return res.status(404).json({ error: "Sender user not found." });
+    }
+
     const newNotification = new notificationModel({
       recipient: recipientId,
       sender: senderId,
+      senderProfilePictureUrl: senderUser.profilePictureUrl || null,
       messageBy,
       isFriendRequest: true,
       isRead: false,
@@ -129,6 +137,34 @@ router.get("/friend-requests", authenticateUser, async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to fetch friend request notifications." });
+  }
+});
+
+router.get("/check-friend-request/:senderId/:recipientId", async (req, res) => {
+  const { senderId, recipientId } = req.params;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(senderId) ||
+    !mongoose.Types.ObjectId.isValid(recipientId)
+  ) {
+    return res.status(400).json({ message: "Invalid user IDs provided." });
+  }
+
+  try {
+    const existingRequest = await notificationModel.findOne({
+      sender: senderId,
+      recipient: recipientId,
+      isFriendRequest: true,
+    });
+
+    if (existingRequest) {
+      return res.json({ exists: true, request: existingRequest });
+    } else {
+      return res.json({ exists: false });
+    }
+  } catch (error) {
+    console.error("Error checking friend request:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

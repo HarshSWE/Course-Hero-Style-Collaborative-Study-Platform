@@ -11,6 +11,10 @@ const notificationSchema = new mongoose.Schema({
     ref: "User",
     required: false,
   },
+  senderProfilePictureUrl: {
+    type: String,
+    required: false,
+  },
   file: { type: mongoose.Schema.Types.ObjectId, ref: "File", required: false },
   messageBy: { type: String, required: true },
   preview: { type: String },

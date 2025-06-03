@@ -55,8 +55,13 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [commentNetVotes, setCommentNetVotes] = useState(netVotes);
   const [isHovered, setIsHovered] = useState(false);
   const [isFriend, setIsFriend] = useState(true);
+  const [hasPendingRequest, setHasPendingRequest] = useState(false);
+
   const token = localStorage.getItem("token");
   const { user } = useUser();
+  const [friendRequestMessage, setFriendRequestMessage] = useState("");
+  const [showFriendRequestMessage, setShowFriendRequestMessage] =
+    useState(false);
 
   useEffect(() => {
     if (isHovered && currentUserId !== comment.userId) {
@@ -64,17 +69,23 @@ const CommentItem: React.FC<CommentItemProps> = ({
         `http://localhost:5000/user/${currentUserId}/is-friend/${comment.userId}`
       )
         .then((res) => {
-          if (!res.ok) {
-            throw new Error("Failed to check friend status");
-          }
+          if (!res.ok) throw new Error("Failed to check friend status");
           return res.json();
         })
-        .then((data) => {
-          setIsFriend(data.isFriend);
+        .then((data) => setIsFriend(data.isFriend))
+        .catch((err) => console.error("Error checking friend status", err));
+
+      fetch(
+        `http://localhost:5000/notifications/check-friend-request/${currentUserId}/${comment.userId}`
+      )
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to check friend request");
+          return res.json();
         })
-        .catch((err) => {
-          console.error("Error checking friend status", err);
-        });
+        .then((data) => setHasPendingRequest(data.exists))
+        .catch((err) =>
+          console.error("Error checking friend request status", err)
+        );
     }
   }, [isHovered, currentUserId, comment.userId]);
 
@@ -180,6 +191,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
       }
 
       console.log(data.message);
+      setFriendRequestMessage("Friend request sent!");
+      setShowFriendRequestMessage(true);
+
+      setTimeout(() => {
+        setShowFriendRequestMessage(false);
+      }, 2000);
     } catch (error) {
       console.error("Error sending friend request:", error);
     }
@@ -207,15 +224,25 @@ const CommentItem: React.FC<CommentItemProps> = ({
           )}
           <span className="text-gray-500 text-sm">Posted By: {username}</span>
 
-          {/* Friend request icon */}
-          {isHovered && !isFriend && currentUserId !== comment.userId && (
-            <button
-              onClick={handleSendFriendRequest}
-              className="ml-1 text-gray-400 hover:text-gray-600"
-            >
-              <PersonAddIcon fontSize="small" />
-            </button>
-          )}
+          {isHovered &&
+            !isFriend &&
+            !hasPendingRequest &&
+            currentUserId !== comment.userId && (
+              <div className="relative">
+                <button
+                  onClick={handleSendFriendRequest}
+                  className="ml-1 text-gray-400 hover:text-gray-600"
+                >
+                  <PersonAddIcon fontSize="small" />
+                </button>
+
+                {showFriendRequestMessage && (
+                  <div className="absolute -top-8 left-0 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-90 transition-opacity duration-500">
+                    {friendRequestMessage}
+                  </div>
+                )}
+              </div>
+            )}
         </div>
       </div>
 

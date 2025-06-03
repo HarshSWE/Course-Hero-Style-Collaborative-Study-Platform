@@ -2,6 +2,7 @@ import React from "react";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNotifications } from "../ContextProviders/NotificationsContext";
 import CommentsModal from "./CommentsModal";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 
 type NotificationModalProps = {
   activeTab: string;
@@ -72,19 +73,34 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
       items.map((item) => (
         <div
           key={item._id}
-          className="px-4 py-2 border-b hover:bg-gray-100 cursor-pointer"
+          className="px-4 py-2 border-b hover:bg-gray-100 cursor-pointer flex items-start gap-3"
           onClick={() =>
             handleNotificationClick(item, isInsight, removeFromList)
           }
         >
-          <div className="font-medium">{item.messageBy}</div>
-          {item.preview && (
-            <div className="text-sm text-gray-700 italic mt-1">
-              {item.preview}
+          {item.senderProfilePictureUrl ? (
+            <img
+              src={item.senderProfilePictureUrl}
+              alt="Sender"
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full">
+              <PersonOutlineIcon className="text-gray-600" />
             </div>
           )}
-          <div className="text-xs text-gray-500">
-            {new Date(item.createdAt).toLocaleString()}
+
+          {/* Notification content */}
+          <div className="flex-1">
+            <div className="font-medium">{item.messageBy}</div>
+            {item.preview && (
+              <div className="text-sm text-gray-700 italic mt-0.5">
+                {item.preview}
+              </div>
+            )}
+            <div className="text-xs text-gray-500 mt-0.5">
+              {new Date(item.createdAt).toLocaleString()}
+            </div>
           </div>
         </div>
       ))
@@ -158,67 +174,83 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
                   friendRequests.map((item) => (
                     <div
                       key={item._id}
-                      className="px-4 py-2 border-b flex flex-col gap-2"
+                      className="px-4 py-2 border-b flex items-start gap-3"
                     >
-                      <div className="font-medium">{item.messageBy}</div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(item.createdAt).toLocaleString()}
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          className="bg-green-500 text-white px-2 py-1 text-xs rounded"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            fetch(
-                              `http://localhost:5000/user/${item.recipient}/add-friend/${item.sender}`,
-                              { method: "POST" }
-                            )
-                              .then((res) => {
-                                if (!res.ok)
-                                  throw new Error("Failed to add friend.");
-                                return fetch(
-                                  `http://localhost:5000/notifications/mark-as-read/${item._id}`,
-                                  { method: "PATCH" }
+                      {item.senderProfilePictureUrl ? (
+                        <img
+                          src={item.senderProfilePictureUrl}
+                          alt="Sender"
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full">
+                          <PersonOutlineIcon className="text-gray-600" />
+                        </div>
+                      )}
+
+                      <div className="flex-1">
+                        <div className="font-medium">{item.messageBy}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {new Date(item.createdAt).toLocaleString()}
+                        </div>
+
+                        {/* Accept / Reject buttons */}
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            className="bg-green-500 text-white px-2 py-1 text-xs rounded"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fetch(
+                                `http://localhost:5000/user/${item.recipient}/add-friend/${item.sender}`,
+                                { method: "POST" }
+                              )
+                                .then((res) => {
+                                  if (!res.ok)
+                                    throw new Error("Failed to add friend.");
+                                  return fetch(
+                                    `http://localhost:5000/notifications/mark-as-read/${item._id}`,
+                                    { method: "PATCH" }
+                                  );
+                                })
+                                .then(() =>
+                                  setFriendRequests((prev) =>
+                                    prev.filter((r) => r._id !== item._id)
+                                  )
+                                )
+                                .catch((err) =>
+                                  console.error(
+                                    "Failed to accept friend request",
+                                    err
+                                  )
                                 );
-                              })
-                              .then(() =>
-                                setFriendRequests((prev) =>
-                                  prev.filter((r) => r._id !== item._id)
-                                )
+                            }}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            className="bg-gray-300 text-black px-2 py-1 text-xs rounded"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fetch(
+                                `http://localhost:5000/notifications/mark-as-read/${item._id}`,
+                                { method: "PATCH" }
                               )
-                              .catch((err) =>
-                                console.error(
-                                  "Failed to accept friend request",
-                                  err
+                                .then(() =>
+                                  setFriendRequests((prev) =>
+                                    prev.filter((r) => r._id !== item._id)
+                                  )
                                 )
-                              );
-                          }}
-                        >
-                          Accept
-                        </button>
-                        <button
-                          className="bg-gray-300 text-black px-2 py-1 text-xs rounded"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            fetch(
-                              `http://localhost:5000/notifications/mark-as-read/${item._id}`,
-                              { method: "PATCH" }
-                            )
-                              .then(() =>
-                                setFriendRequests((prev) =>
-                                  prev.filter((r) => r._id !== item._id)
-                                )
-                              )
-                              .catch((err) =>
-                                console.error(
-                                  "Failed to reject friend request",
-                                  err
-                                )
-                              );
-                          }}
-                        >
-                          Reject
-                        </button>
+                                .catch((err) =>
+                                  console.error(
+                                    "Failed to reject friend request",
+                                    err
+                                  )
+                                );
+                            }}
+                          >
+                            Reject
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))

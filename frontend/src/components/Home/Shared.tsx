@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import CommentsModal from "./Modals/CommentsModal";
-import { useNotifications } from "./ContextProviders/NotificationsContext";
-import FileCard from "./FileCard";
+import CommentsModal from "../Modals/CommentsModal";
+import { useNotifications } from "../ContextProviders/NotificationsContext";
+import FileCard from "../ContainerCards/FileCard";
 
 interface File {
   _id: string;
@@ -43,6 +43,7 @@ const Shared = () => {
     setActiveFileForComments(file);
   };
 
+  // Filter shared files based on search term (case-insensitive)
   const filteredFiles = sharedFiles.filter((file) => {
     const name = file?.originalname?.toLowerCase() || "";
     const filename = file?.filename?.toLowerCase() || "";
@@ -71,7 +72,6 @@ const Shared = () => {
           className="border border-gray-300 rounded-md px-3 py-1 text-sm w-48 focus:outline-none focus:ring-0 hover:border-black"
         />
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredFiles.map((file) => {
           const fileUrl = `http://localhost:5000/uploads/${file.filename}`;

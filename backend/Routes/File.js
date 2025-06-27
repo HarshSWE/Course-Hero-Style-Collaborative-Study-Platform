@@ -16,6 +16,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Retrieve the MongoDB _id of a file by its filename
 router.get("/fileId/:filename", async (req, res) => {
   try {
     const { filename } = req.params;
@@ -33,6 +34,7 @@ router.get("/fileId/:filename", async (req, res) => {
   }
 });
 
+// Delete a file record and physical file from disk, only the owner of the file can delete it
 router.delete("/:filename", authenticateUser, async (req, res) => {
   try {
     const { filename } = req.params;
@@ -58,6 +60,7 @@ router.delete("/:filename", authenticateUser, async (req, res) => {
   }
 });
 
+// Upload one or multiple files, associating each with course and school data
 router.post(
   "/upload",
   authenticateUser,
@@ -67,6 +70,8 @@ router.post(
     try {
       const files = req.files;
       let { courses, schools } = req.body;
+
+      // Normalize courses and schools into arrays if they are not already
       if (!Array.isArray(courses)) {
         courses = [courses];
       }
@@ -92,6 +97,7 @@ router.post(
 
       const savedFiles = [];
 
+      // Save each file’s metadata to the database
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const { path, filename, originalname } = file;
@@ -114,8 +120,6 @@ router.post(
         });
       }
 
-      console.log(savedFiles);
-
       res.status(200).json({ message: "Files uploaded", files: savedFiles });
     } catch (error) {
       console.error("Upload Error:", error);
@@ -124,9 +128,9 @@ router.post(
   }
 );
 
+//  Fetch all files uploaded by the authenticated user
 router.get("/all", authenticateUser, async (req, res) => {
   try {
-    console.log(req.user);
     const userFiles = await fileModel.find({
       userId: new mongoose.Types.ObjectId(req.user._id),
     });
@@ -138,6 +142,7 @@ router.get("/all", authenticateUser, async (req, res) => {
   }
 });
 
+// Search for files by filename, course, or school matching query (case-insensitive)
 router.get("/search", async (req, res) => {
   try {
     const query = req.query.q;
@@ -161,6 +166,7 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// Retrieve file metadata (filename, course, school) for all files
 router.get("/metadata", async (req, res) => {
   try {
     const files = await fileModel.find({}, "filename course school");
@@ -170,22 +176,22 @@ router.get("/metadata", async (req, res) => {
   }
 });
 
+// Find files matching any of the given recommendations (course & school exact match, case-insensitive)
 router.post("/match", async (req, res) => {
   const recommendations = req.body.recommendations;
-  console.log("Received recommendations:", recommendations);
 
   if (!Array.isArray(recommendations))
     return res.status(400).send("Invalid input");
 
   try {
+    // Create regex queries for exact (case-insensitive) matches on course and school
     const queries = recommendations.map((r) => ({
       course: new RegExp(`^${r.course.trim()}$`, "i"),
       school: new RegExp(`^${r.school.trim()}$`, "i"),
     }));
-    console.log("Mongo queries:", queries);
 
     const files = await fileModel.find({ $or: queries });
-    console.log("Matched files:", files);
+
     res.json(files);
   } catch (err) {
     console.error(err);
@@ -193,11 +199,10 @@ router.post("/match", async (req, res) => {
   }
 });
 
+// Get filename for a given file ID
 router.get("/:id/filename", async (req, res) => {
-  console.log(req.params.id);
   try {
     const file = await fileModel.findById(req.params.id);
-    console.log("Found file:", file);
 
     if (!file) return res.status(404).json({ message: "File not found" });
 
@@ -207,6 +212,7 @@ router.get("/:id/filename", async (req, res) => {
   }
 });
 
+// Increment the 'views' count for a file
 router.put("/:id/view", async (req, res) => {
   const { id } = req.params;
 
@@ -228,6 +234,7 @@ router.put("/:id/view", async (req, res) => {
   }
 });
 
+// Retrieve statistics (views and saves) for a given file
 router.get("/:fileId/stats", async (req, res) => {
   const { fileId } = req.params;
 
@@ -249,6 +256,7 @@ router.get("/:fileId/stats", async (req, res) => {
   }
 });
 
+// Chat endpoint that uses OpenAI GPT model to answer user questions based on file content
 router.post("/chat", async (req, res) => {
   try {
     const { content, userMessage } = req.body;

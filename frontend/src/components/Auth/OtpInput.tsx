@@ -12,27 +12,32 @@ const OtpInput: React.FC = () => {
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
   const navigate = useNavigate();
+
   const location = useLocation();
   const { email, name } = location.state || {};
 
+  // Effect to automatically verify OTP once all 6 inputs are filled with digits
   useEffect(() => {
     if (otp.every((digit) => /^[0-9]$/.test(digit))) {
       verifyOtp();
     }
   }, [otp]);
 
+  // Handle OTP input value changes
   const handleChange = (value: string, index: number) => {
+    // Allow only digits or empty string
     if (!/^[0-9]?$/.test(value)) return;
 
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-
+    // Automatically focus next input if value entered and not at last index
     if (value && index < 5) {
       inputsRef.current[index + 1]?.focus();
     }
   };
 
+  // Handle keyboard actions like backspace navigation
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
     index: number
@@ -99,6 +104,7 @@ const OtpInput: React.FC = () => {
     }
   };
 
+  // Function to complete signup by submitting password to backend
   const handleFinalSignup = async () => {
     try {
       const signupResponse = await fetch("http://localhost:5000/signup", {

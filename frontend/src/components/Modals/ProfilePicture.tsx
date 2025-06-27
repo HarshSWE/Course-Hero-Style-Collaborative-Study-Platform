@@ -2,15 +2,16 @@ import React, { ChangeEvent } from "react";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import { useProfileImage } from "./ContextProviders/ProfileImageContext";
+import { useProfileImage } from "../ContextProviders/ProfileImageContext";
 
 const ProfilePicture: React.FC = () => {
   const { image, setImage } = useProfileImage();
 
+  // Handler for when user selects a new image file
   const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-
+      // Use FileReader to convert image file to Base64 string for immediate preview
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
@@ -23,6 +24,7 @@ const ProfilePicture: React.FC = () => {
     }
   };
 
+  // Handler to remove the current profile image
   const handleRemove = () => {
     setImage(null);
   };
@@ -53,6 +55,7 @@ const ProfilePicture: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center p-4 border rounded-xl w-64 bg-white">
+      {/* Profile picture display area */}
       <div className="w-32 h-32 rounded-full overflow-hidden border mb-4 flex items-center justify-center bg-gray-100">
         {image ? (
           <img
@@ -64,8 +67,9 @@ const ProfilePicture: React.FC = () => {
           <PersonOutlineIcon className="text-black" style={{ fontSize: 60 }} />
         )}
       </div>
-
+      {/* Controls for changing or removing the profile picture */}
       <div className="flex gap-4">
+        {/* Label styled as button triggers hidden file input */}
         <label className="flex items-center gap-1 cursor-pointer text-blue-500 font-medium hover:underline">
           <EditIcon fontSize="small" />
           Change
@@ -77,6 +81,7 @@ const ProfilePicture: React.FC = () => {
           />
         </label>
 
+        {/* Button to remove the current image */}
         <button
           onClick={handleRemove}
           className="flex items-center gap-1 text-red-500 font-medium hover:underline"

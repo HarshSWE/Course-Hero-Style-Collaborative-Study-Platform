@@ -23,6 +23,26 @@ type NotificationModalProps = {
   setFriendRequests: React.Dispatch<React.SetStateAction<any[]>>;
 };
 
+// Utility component: renders an avatar image or fallback icon
+const AvatarOrIcon: React.FC<{ url?: string }> = ({ url }) =>
+  url ? (
+    <img src={url} alt="Sender" className="w-8 h-8 rounded-full object-cover" />
+  ) : (
+    <div className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full">
+      <PersonOutlineIcon className="text-gray-600" />
+    </div>
+  );
+
+const markNotificationAsRead = async (id: string) => {
+  try {
+    await fetch(`http://localhost:5000/notifications/mark-as-read/${id}`, {
+      method: "PATCH",
+    });
+  } catch (err) {
+    console.error("Failed to mark notification as read", err);
+  }
+};
+
 const NotificationsModal: React.FC<NotificationModalProps> = ({
   activeTab,
   setActiveTab,
@@ -42,27 +62,26 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
   setFriendRequests,
 }) => {
   const { notifications, setNotifications } = useNotifications();
-
-  const handleNotificationClick = (
+  // Handles click on a notification (marks as read, loads preview/comments)
+  const handleNotificationClick = async (
     notif: any,
     isInsight: boolean,
     removeFromList: (id: string) => void
   ) => {
-    fetch(`http://localhost:5000/notifications/mark-as-read/${notif._id}`, {
-      method: "PATCH",
-    })
-      .then(() => {
-        setSelectedPreview(notif.preview);
-        setNotifCommentId(notif.commentReference);
-        fetchFilename(notif.file);
-        if (isInsight) {
-          setShowCommentSection(true);
-        }
-        removeFromList(notif._id);
-      })
-      .catch((err) => console.error("Failed to mark as read", err));
+    try {
+      await markNotificationAsRead(notif._id);
+      setSelectedPreview(notif.preview);
+      setNotifCommentId(notif.commentReference);
+      fetchFilename(notif.file);
+      if (isInsight) {
+        setShowCommentSection(true);
+      }
+      removeFromList(notif._id);
+    } catch (err) {
+      console.error("Failed to handle notification click", err);
+    }
   };
-
+  // Renders a list of notification cards
   const renderNotificationList = (
     items: any[],
     isInsight: boolean,
@@ -78,19 +97,8 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
             handleNotificationClick(item, isInsight, removeFromList)
           }
         >
-          {item.senderProfilePictureUrl ? (
-            <img
-              src={item.senderProfilePictureUrl}
-              alt="Sender"
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full">
-              <PersonOutlineIcon className="text-gray-600" />
-            </div>
-          )}
+          <AvatarOrIcon url={item.senderProfilePictureUrl} />
 
-          {/* Notification content */}
           <div className="flex-1">
             <div className="font-medium">{item.messageBy}</div>
             {item.preview && (
@@ -108,7 +116,7 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
       <div className="p-4 text-gray-500 text-center">{emptyText}</div>
     );
   };
-
+  // Calculates total count of notifications across all tabs
   const totalNotificationsCount =
     notifications.length + insights.length + friendRequests.length;
 
@@ -126,12 +134,13 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
           </span>
         )}
       </div>
-
+      {/* Dropdown panel */}
       <div className="relative">
         {showNotifications && (
           <div className="absolute top-8 w-80 bg-white border border-gray-300 rounded-md shadow-lg z-50 overflow-y-auto max-h-96">
+            {/* Tabs */}
             <div className="flex justify-evenly border-b border-gray-300 bg-white">
-              {["insights", "notifications", "friendRequests"].map((tab) => (
+              {["insights", "replies", "friendRequests"].map((tab) => (
                 <button
                   key={tab}
                   className={`flex-1 text-center px-4 py-2 font-medium ${
@@ -143,15 +152,15 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
                 >
                   {tab === "insights"
                     ? "Insights"
-                    : tab === "notifications"
-                    ? "Notifications"
+                    : tab === "replies"
+                    ? "Replies"
                     : "Friend Requests"}
                 </button>
               ))}
             </div>
-
+            {/* Tab Content */}
             <div className="p-2">
-              {activeTab === "notifications" ? (
+              {activeTab === "replies" ? (
                 renderNotificationList(
                   notifications,
                   false,
@@ -159,7 +168,7 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
                     setNotifications((prev) =>
                       prev.filter((n) => n._id !== id)
                     ),
-                  "No notifications"
+                  "No replies"
                 )
               ) : activeTab === "insights" ? (
                 renderNotificationList(
@@ -176,76 +185,55 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
                       key={item._id}
                       className="px-4 py-2 border-b flex items-start gap-3"
                     >
-                      {item.senderProfilePictureUrl ? (
-                        <img
-                          src={item.senderProfilePictureUrl}
-                          alt="Sender"
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full">
-                          <PersonOutlineIcon className="text-gray-600" />
-                        </div>
-                      )}
+                      <AvatarOrIcon url={item.senderProfilePictureUrl} />
 
                       <div className="flex-1">
                         <div className="font-medium">{item.messageBy}</div>
                         <div className="text-xs text-gray-500 mt-0.5">
                           {new Date(item.createdAt).toLocaleString()}
                         </div>
-
-                        {/* Accept / Reject buttons */}
+                        {/* Accept / Reject friend request buttons */}
                         <div className="flex gap-2 mt-2">
                           <button
                             className="bg-green-500 text-white px-2 py-1 text-xs rounded"
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              fetch(
-                                `http://localhost:5000/user/${item.recipient}/add-friend/${item.sender}`,
-                                { method: "POST" }
-                              )
-                                .then((res) => {
-                                  if (!res.ok)
-                                    throw new Error("Failed to add friend.");
-                                  return fetch(
-                                    `http://localhost:5000/notifications/mark-as-read/${item._id}`,
-                                    { method: "PATCH" }
-                                  );
-                                })
-                                .then(() =>
-                                  setFriendRequests((prev) =>
-                                    prev.filter((r) => r._id !== item._id)
-                                  )
-                                )
-                                .catch((err) =>
-                                  console.error(
-                                    "Failed to accept friend request",
-                                    err
-                                  )
+                              try {
+                                const res = await fetch(
+                                  `http://localhost:5000/user/${item.recipient}/add-friend/${item.sender}`,
+                                  { method: "POST" }
                                 );
+                                if (!res.ok)
+                                  throw new Error("Failed to add friend.");
+                                await markNotificationAsRead(item._id);
+                                setFriendRequests((prev) =>
+                                  prev.filter((r) => r._id !== item._id)
+                                );
+                              } catch (err) {
+                                console.error(
+                                  "Failed to accept friend request",
+                                  err
+                                );
+                              }
                             }}
                           >
                             Accept
                           </button>
                           <button
                             className="bg-gray-300 text-black px-2 py-1 text-xs rounded"
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              fetch(
-                                `http://localhost:5000/notifications/mark-as-read/${item._id}`,
-                                { method: "PATCH" }
-                              )
-                                .then(() =>
-                                  setFriendRequests((prev) =>
-                                    prev.filter((r) => r._id !== item._id)
-                                  )
-                                )
-                                .catch((err) =>
-                                  console.error(
-                                    "Failed to reject friend request",
-                                    err
-                                  )
+                              try {
+                                await markNotificationAsRead(item._id);
+                                setFriendRequests((prev) =>
+                                  prev.filter((r) => r._id !== item._id)
                                 );
+                              } catch (err) {
+                                console.error(
+                                  "Failed to reject friend request",
+                                  err
+                                );
+                              }
                             }}
                           >
                             Reject
@@ -261,7 +249,7 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
                 )
               ) : null}
             </div>
-
+            {/* Comments section modal (opens on insight click) */}
             {showCommentSection && filename && (
               <CommentsModal
                 isOpen={true}

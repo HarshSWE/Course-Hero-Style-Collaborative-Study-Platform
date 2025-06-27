@@ -5,6 +5,8 @@ import { fileModel } from "../models/file.model.js";
 
 const router = express.Router();
 
+// Add a bookmark for a specific file for the authenticated user and increments the file's 'saves' count by 1
+
 router.post("/:fileId", authenticateUser, async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -30,9 +32,9 @@ router.post("/:fileId", authenticateUser, async (req, res) => {
   }
 });
 
+// Retrieves all files bookmarked by the authenticated user
 router.get("/all", authenticateUser, async (req, res) => {
   const userId = req.user._id;
-  console.log(userId);
 
   const bookmarks = await bookmarkModel.find({ userId }).populate("fileId");
 
@@ -41,6 +43,7 @@ router.get("/all", authenticateUser, async (req, res) => {
   res.status(200).json(files);
 });
 
+// Removes a bookmark for a specific file for the authenticated user and decrements the file's 'saves' count by 1
 router.delete("/:fileId", authenticateUser, async (req, res) => {
   try {
     const userId = req.user?.id;

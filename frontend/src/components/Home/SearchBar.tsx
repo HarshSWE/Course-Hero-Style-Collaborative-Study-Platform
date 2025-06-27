@@ -58,7 +58,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
                     setSelectedFile(file);
                     setIsModalOpen(true);
                     setShowDropdown(false);
-
                     try {
                       await fetch(
                         `http://localhost:5000/file/${file._id}/view`,

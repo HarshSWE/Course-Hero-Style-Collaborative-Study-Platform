@@ -24,12 +24,15 @@ export default function FileCard({
   onCommentClick,
   onDeleteClick,
 }: FileCardProps) {
+  // Extract file extension (lowercased) from filename
   const ext = file.filename.split(".").pop()?.toLowerCase();
 
   return (
     <div className="relative border rounded-lg overflow-hidden shadow-sm">
+      {/* Action icons section */}
       {onDeleteClick ? (
         <>
+          {/* Comment icon (centered at top if delete is available) */}
           <InsertCommentIcon
             fontSize="small"
             className="absolute top-2 left-1/2 transform -translate-x-1/2 text-blue-500 cursor-pointer hover:text-blue-600"
@@ -47,13 +50,13 @@ export default function FileCard({
           </IconButton>
         </>
       ) : (
+        // If no delete, just show comment icon on the top-right
         <InsertCommentIcon
           fontSize="small"
           className="absolute top-2 right-2 text-blue-500 cursor-pointer hover:text-blue-600"
           onClick={() => onCommentClick(file)}
         />
       )}
-
       <div className="p-4">
         <p className="font-semibold text-lg">{file.originalname}</p>
         <p className="text-sm text-black-500">
@@ -63,7 +66,6 @@ export default function FileCard({
           {file.course} · {file.school}
         </p>
       </div>
-
       {ext === "pdf" ? (
         <iframe
           src={fileUrl}

@@ -7,6 +7,7 @@ import transporter from "../config/mailer.js";
 
 const router = express.Router();
 
+// Check if a user already exists with the provided email
 router.post("/check-user", async (req, res) => {
   try {
     const { email } = req.body;
@@ -18,6 +19,7 @@ router.post("/check-user", async (req, res) => {
   }
 });
 
+// Generate and email a 6-digit OTP to the provided email
 router.post("/send-otp", async (req, res) => {
   const { email } = req.body;
   try {
@@ -43,6 +45,7 @@ router.post("/send-otp", async (req, res) => {
   }
 });
 
+// Verify submitted OTP against stored value and expiry
 router.post("/verify-otp", async (req, res) => {
   const { email, code } = req.body;
 

@@ -63,16 +63,20 @@ const AddToFolderDropdown: React.FC<AddToFolderDropdownProps> = ({
 
   return (
     <div className="relative inline-block text-left">
+      {/* Dropdown content container */}
       <div className="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+        {/* Loading state */}
         {loading ? (
           <div className="p-4 text-base text-black font-medium text-center">
             Loading folders...
           </div>
-        ) : folders.filter((f) => f._id && f.name).length === 0 ? (
+        ) : // No folders available state
+        folders.filter((f) => f._id && f.name).length === 0 ? (
           <div className="p-4 text-base text-black font-medium text-center">
             No folders found
           </div>
         ) : (
+          // Render list of folder options
           folders
             .filter((folder) => folder._id && folder.name)
             .map((folder) => (
@@ -82,7 +86,10 @@ const AddToFolderDropdown: React.FC<AddToFolderDropdownProps> = ({
                 className="flex items-center justify-between w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
               >
                 <span>{folder.name}</span>
-                <FolderOpenIcon fontSize="small" className="text-blue-500" />
+                <FolderOpenIcon
+                  fontSize="small"
+                  className="text-blue-500"
+                />{" "}
               </button>
             ))
         )}

@@ -7,6 +7,13 @@ const userSchema = new Schema(
     password: { type: String, required: true },
     profilePictureUrl: { type: String, required: false },
     friends: [{ type: Types.ObjectId, ref: "User" }],
+
+    groupChatReads: [
+      {
+        groupChatId: { type: Types.ObjectId, ref: "GroupChat" },
+        lastReadAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );

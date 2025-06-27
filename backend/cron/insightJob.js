@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 
 const BASE_URL = "http://localhost:5000";
 
+// Function to start a scheduled cron job that generates AI User insights daily at 8:00 AM
 export function startInsightCron() {
   cron.schedule("0 8 * * *", async () => {
     console.log(" Starting daily AI insight generation...");
@@ -15,6 +16,7 @@ export function startInsightCron() {
       }
 
       const users = await userModel.find({});
+
       const userIds = users.map((u) => u._id.toString());
 
       for (const userId of userIds) {

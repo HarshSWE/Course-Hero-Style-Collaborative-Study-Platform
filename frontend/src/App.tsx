@@ -1,18 +1,13 @@
 import Login from "./components/Auth/Login";
 import SignUp from "./components/Auth/SignUp";
-import FileUpload from "./components/FileUpload";
-import Home from "./components/Home";
-import Shared from "./components/Shared";
-import Saved from "./components/Saved";
-import CommentsModal from "./components/Modals/CommentsModal";
-import ProfilePicture from "./components/ProfilePicture";
-import OtpInput from "./components/Auth/OtpInput";
+import Home from "./components/Home/Home";
+import Shared from "./components/Home/Shared";
+import Saved from "./components/Home/Saved";
 import { ProfileImageProvider } from "./components/ContextProviders/ProfileImageContext";
 import { FolderProvider } from "./components/ContextProviders/FolderContext";
 import { UserProvider } from "./components/ContextProviders/UserContext";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { NotificationsProvider } from "./components/ContextProviders/NotificationsContext";
-import ChatBotModal from "./components/Modals/ChatBotModal";
 
 function App() {
   return (
@@ -23,33 +18,10 @@ function App() {
             <Router>
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/fileupload" element={<FileUpload />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/shared" element={<Shared />} />
                 <Route path="/saved" element={<Saved />} />
-                <Route
-                  path="/CommentsModal"
-                  element={
-                    <CommentsModal
-                      isOpen={true}
-                      onClose={() => window.history.back()}
-                    />
-                  }
-                />
-                <Route path="/ProfilePicture" element={<ProfilePicture />} />
-                <Route path="/otpInput" element={<OtpInput />} />
-                <Route
-                  path="/Chatbot"
-                  element={
-                    <ChatBotModal
-                      content="Here is some extracted content from a file or document."
-                      onClose={() => {
-                        console.log("Chatbot closed");
-                      }}
-                    />
-                  }
-                />
               </Routes>
             </Router>
           </NotificationsProvider>

@@ -1,19 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import FileUpload from "./FileUpload";
-import Recommendations from "./Reccomendations";
+import Recommendations from "./Recommendations";
 import SearchBar from "./SearchBar";
 import { useNavigate } from "react-router-dom";
 import debounce from "lodash.debounce";
-import { useProfileImage } from "./ContextProviders/ProfileImageContext";
+import { useProfileImage } from "../ContextProviders/ProfileImageContext";
 import { useLocation } from "react-router-dom";
-import { io } from "socket.io-client";
-import { useNotifications } from "./ContextProviders/NotificationsContext";
-import { useUser } from "./ContextProviders/UserContext";
-import useClickOutside from "./Hooks/useClickOutside";
-import NotificationsModal from "./Modals/NotificationsModal";
-import ProfileImageModal from "./Modals/ProfileImageModal";
+import { useNotifications } from "../ContextProviders/NotificationsContext";
+import { useUser } from "../ContextProviders/UserContext";
+import useClickOutside from "../Hooks/useClickOutside";
+import NotificationsModal from "../Modals/NotificationsModal";
+import ProfileImageModal from "../Modals/ProfileImageModal";
+import GroupChatModal from "../Modals/GroupChat/GroupChatModal";
 import SideButtons from "./SideButtons";
-import HomeFileCard from "./HomeFileCard";
+import HomeFileCard from "../ContainerCards/HomeFileCard";
+import TelegramIcon from "@mui/icons-material/Telegram";
+import socket from "../Services/socketService";
 
 type NotificationType = {
   _id: string;
@@ -52,6 +54,8 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState("notifications");
   const [insights, setInsights] = useState<NotificationType[]>([]);
   const [friendRequests, setFriendRequests] = useState<any[]>([]);
+  const [showGroupChatModal, setShowGroupChatModal] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const { user } = useUser();
 
@@ -67,17 +71,20 @@ const Home = () => {
 
   const { setUser } = useUser();
 
+  // On URL change, open upload panel if upload param exists
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const isUploading = params.get("upload") === "true";
     setShowFileUpload(isUploading);
   }, [location]);
 
+  // Debounced search effect on searchTerm change
   useEffect(() => {
     debouncedSearch(searchTerm);
     return () => debouncedSearch.cancel();
   }, [searchTerm]);
 
+  // Fetch bookmarked files once on mount
   useEffect(() => {
     const fetchBookmarkedFileIds = async () => {
       try {
@@ -100,20 +107,23 @@ const Home = () => {
     fetchBookmarkedFileIds();
   }, []);
 
+  // Socket.io listeners for real-time notifications
   useEffect(() => {
-    const socket = io("http://localhost:5000", {
-      auth: { token: localStorage.getItem("token") },
-    });
-
     socket.on("new-notification", () => {
       setNotificationsCount((prev) => prev + 1);
     });
 
+    socket.on("connect", () => {
+      console.log("Socket connected:", socket.id);
+    });
+
     return () => {
-      socket.disconnect();
+      socket.off("new-notification");
+      socket.off("connect");
     };
   }, []);
 
+  // Fetch notification insights for current user
   useEffect(() => {
     const fetchInsights = async () => {
       try {
@@ -131,6 +141,7 @@ const Home = () => {
     fetchInsights();
   }, [user?._id]);
 
+  // Fetch pending friend requests
   useEffect(() => {
     const fetchFriendRequests = async () => {
       try {
@@ -158,6 +169,23 @@ const Home = () => {
     fetchFriendRequests();
   }, []);
 
+  useEffect(() => {
+    fetchUnreadGroupChats();
+  }, []);
+
+  // Socket listener for new group chat messages
+  useEffect(() => {
+    socket.on("new-group-message", ({ chatId }) => {
+      console.log("New group message received for chat:", chatId);
+      fetchUnreadGroupChats();
+    });
+
+    return () => {
+      socket.off("new-group-message");
+    };
+  }, []);
+
+  // Close folder dropdown when clicking outside
   useClickOutside(
     dropdownRef,
     () => {
@@ -175,6 +203,7 @@ const Home = () => {
     navigate("/login");
   };
 
+  // Toggle bookmarks for a file
   const toggleBookmark = async (fileId: string) => {
     const isBookmarked = bookmarkedFiles.has(fileId);
     const url = `http://localhost:5000/bookmarks/${fileId}`;
@@ -212,6 +241,7 @@ const Home = () => {
     }
   };
 
+  // Debounced search API call
   const debouncedSearch = useRef(
     debounce(async (term: string) => {
       if (!term.trim()) {
@@ -240,6 +270,7 @@ const Home = () => {
     }, 300)
   ).current;
 
+  // Fetch file's filename by ID (for comment reference)
   const fetchFilename = async (fileId: string) => {
     console.log("Fetching filename for fileId:", fileId);
 
@@ -259,6 +290,24 @@ const Home = () => {
       return data.filename;
     } catch (error) {
       console.error("Error fetching file:", error);
+    }
+  };
+
+  // Fetch unread group chat message count
+  const fetchUnreadGroupChats = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/group-chats/unread-count",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      const data = await res.json();
+      setUnreadCount(data.count);
+    } catch (err) {
+      console.error("Error fetching unread group chats:", err);
     }
   };
 
@@ -297,6 +346,18 @@ const Home = () => {
           searchContainerRef={searchContainerRef}
         />
 
+        <button
+          onClick={() => setShowGroupChatModal(true)}
+          className="relative text-blue-600 mr-8"
+        >
+          <TelegramIcon fontSize="medium" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+              {unreadCount}
+            </span>
+          )}
+        </button>
+
         <ProfileImageModal
           image={image}
           showProfilePic={showProfilePic}
@@ -333,6 +394,13 @@ const Home = () => {
         notifications={notifications}
         onClose={() => setIsModalOpen(false)}
       />
+      {showGroupChatModal && (
+        <GroupChatModal
+          isOpen={showGroupChatModal}
+          onClose={() => setShowGroupChatModal(false)}
+          setUnreadCount={setUnreadCount}
+        />
+      )}
     </div>
   );
 };

@@ -19,6 +19,7 @@ const ChatBotModal: React.FC<ChatBotModalProps> = ({ content, onClose }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Function to send user message and handle chatbot response
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -42,7 +43,7 @@ const ChatBotModal: React.FC<ChatBotModalProps> = ({ content, onClose }) => {
       if (!response.ok) {
         throw new Error(data.error || "Failed to get response");
       }
-
+      // Add bot's response to chat history
       const botMessage: Message = {
         role: "bot",
         content: data.message,
@@ -95,7 +96,7 @@ const ChatBotModal: React.FC<ChatBotModalProps> = ({ content, onClose }) => {
           </button>
         </div>
       </div>
-
+      {/* Chat messages display area */}
       <div className="flex-1 overflow-auto p-3 space-y-2">
         {messages.map((msg, index) => (
           <div
@@ -109,11 +110,12 @@ const ChatBotModal: React.FC<ChatBotModalProps> = ({ content, onClose }) => {
             {msg.content}
           </div>
         ))}
+        {/* Loading indicator */}
         {isLoading && (
           <div className="text-gray-500 italic text-sm">AI is typing...</div>
         )}
       </div>
-
+      {/* Input field and send button */}
       <div className="p-3 border-t flex">
         <input
           value={input}

@@ -63,8 +63,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [showFriendRequestMessage, setShowFriendRequestMessage] =
     useState(false);
 
+  // On hover, check if commenter is a friend and if a friend request is already pending
   useEffect(() => {
     if (isHovered && currentUserId !== comment.userId) {
+      // Check friend status
       fetch(
         `http://localhost:5000/user/${currentUserId}/is-friend/${comment.userId}`
       )
@@ -75,6 +77,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
         .then((data) => setIsFriend(data.isFriend))
         .catch((err) => console.error("Error checking friend status", err));
 
+      // Check pending friend request status
       fetch(
         `http://localhost:5000/notifications/check-friend-request/${currentUserId}/${comment.userId}`
       )
@@ -89,6 +92,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
     }
   }, [isHovered, currentUserId, comment.userId]);
 
+  // Function to handle voting logic on a comment
   const voteOnComment = async (
     commentId: string,
     voteType: "upvote" | "downvote",
@@ -148,6 +152,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
     onToggleCollapse();
   };
 
+  // Handle voting and update local state
   const handleVote = async (voteType: "upvote" | "downvote") => {
     if (!token) {
       console.error("User not authenticated");
@@ -162,6 +167,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
     }
   };
 
+  // Send a friend request to the comment author
   const handleSendFriendRequest = async () => {
     if (!token || !user) {
       console.error("User not authenticated");
@@ -209,6 +215,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Comment header: profile image, username, and friend request option */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           {profilePictureUrl ? (
@@ -223,7 +230,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             </div>
           )}
           <span className="text-gray-500 text-sm">Posted By: {username}</span>
-
+          {/* Friend request button (if not already a friend or pending) */}
           {isHovered &&
             !isFriend &&
             !hasPendingRequest &&
@@ -245,8 +252,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
             )}
         </div>
       </div>
-
       <div className="flex items-center justify-between mt-1">
+        {/* Comment text or edit input */}
         {isEditing ? (
           <input
             type="text"
@@ -263,8 +270,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
           <p className="text-gray-800">{comment.text}</p>
         )}
       </div>
-
       <div className="flex space-x-2 mt-1 text-sm text-gray-600 items-center">
+        {/* Action buttons: edit, delete, reply, upvote, downvote, collapse */}
         {isEditing ? (
           <>
             <button onClick={handleSaveEdit} className="text-green-600">
@@ -305,6 +312,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 <ArrowDownwardIcon fontSize="small" />
               </button>
             </div>
+            {/* Collapse/expand replies button */}
             {hasChildren && (
               <button onClick={handleToggleCollapse} className="ml-1">
                 {isCollapsed ? (
@@ -317,7 +325,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </>
         )}
       </div>
-
+      {/* Reply input box */}
       <div className="mt-1">
         <input
           type="text"

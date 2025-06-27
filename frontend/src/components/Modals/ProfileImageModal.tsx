@@ -1,6 +1,6 @@
 import React from "react";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import ProfilePicture from "../ProfilePicture";
+import ProfilePicture from "./ProfilePicture";
 
 type ProfileImageModalProps = {
   image: string | null;

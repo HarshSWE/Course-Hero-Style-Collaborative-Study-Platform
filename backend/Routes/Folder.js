@@ -5,6 +5,7 @@ import { fileModel } from "../models/file.model.js";
 
 const router = express.Router();
 
+// Create a new folder for the authenticated user
 router.post("/", authenticateUser, async (req, res) => {
   try {
     const { name } = req.body;
@@ -28,6 +29,7 @@ router.post("/", authenticateUser, async (req, res) => {
   }
 });
 
+// Add a file to a folder owned by the authenticated user
 router.post("/:folderId/file", authenticateUser, async (req, res) => {
   try {
     const { folderId } = req.params;
@@ -70,6 +72,7 @@ router.post("/:folderId/file", authenticateUser, async (req, res) => {
   }
 });
 
+// Get all folders belonging to the authenticated user
 router.get("/all", authenticateUser, async (req, res) => {
   try {
     const folders = await folderModel
@@ -82,6 +85,7 @@ router.get("/all", authenticateUser, async (req, res) => {
   }
 });
 
+//  Retrieve all files inside a given folder by its ID
 router.get("/:folderId/files", async (req, res) => {
   try {
     const { folderId } = req.params;

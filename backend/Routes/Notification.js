@@ -6,6 +6,7 @@ import { userModel } from "../models/user.model.js";
 
 const router = express.Router();
 
+// Get the count of unread notifications for the authenticated user.
 router.get("/count", authenticateUser, async (req, res) => {
   try {
     const count = await notificationModel.countDocuments({
@@ -20,8 +21,8 @@ router.get("/count", authenticateUser, async (req, res) => {
   }
 });
 
+// Fetch all unread notifications (excluding insights and friend requests)for the authenticated user, sorted by newest first.
 router.get("/", authenticateUser, async (req, res) => {
-  console.log("Authenticated User:", req.user);
   try {
     const notifications = await notificationModel
       .find({
@@ -32,7 +33,6 @@ router.get("/", authenticateUser, async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    console.log(notifications);
     res.status(200).json(notifications);
   } catch (error) {
     console.error("Error fetching notifications:", error);
@@ -40,10 +40,10 @@ router.get("/", authenticateUser, async (req, res) => {
   }
 });
 
+// Mark a specific notification as read by its ID.
 router.patch("/mark-as-read/:id", async (req, res) => {
   try {
     const notifId = req.params.id;
-    console.log(notifId);
     await notificationModel.findByIdAndUpdate(notifId, { isRead: true });
     res.status(200).json({ message: "Notification marked as read." });
   } catch (err) {
@@ -52,6 +52,7 @@ router.patch("/mark-as-read/:id", async (req, res) => {
   }
 });
 
+// Fetch unread insights notifications for a given user ID
 router.get("/insights/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -70,6 +71,7 @@ router.get("/insights/:userId", async (req, res) => {
   }
 });
 
+//  Send a friend request notification from the authenticated user to another user, prevents duplicate pending requests.
 router.post("/friend-request", authenticateUser, async (req, res) => {
   try {
     const { recipientId, messageBy } = req.body;
@@ -123,6 +125,7 @@ router.post("/friend-request", authenticateUser, async (req, res) => {
   }
 });
 
+// Fetch all pending friend request notifications for the authenticated user.
 router.get("/friend-requests", authenticateUser, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -140,6 +143,7 @@ router.get("/friend-requests", authenticateUser, async (req, res) => {
   }
 });
 
+// Check if a pending friend request exists between a specific sender and recipient.
 router.get("/check-friend-request/:senderId/:recipientId", async (req, res) => {
   const { senderId, recipientId } = req.params;
 
@@ -155,6 +159,7 @@ router.get("/check-friend-request/:senderId/:recipientId", async (req, res) => {
       sender: senderId,
       recipient: recipientId,
       isFriendRequest: true,
+      isRead: false,
     });
 
     if (existingRequest) {

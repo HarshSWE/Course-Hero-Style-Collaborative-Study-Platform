@@ -11,19 +11,22 @@ const SignUp = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     try {
+      // Check if a user already exists with this email
       const checkResponse = await checkIfUserExists(form.email);
       if (checkResponse.exists) {
         setError("A user with this email already exists.");
         return;
       }
-
+      // If user doesn't exist, send OTP to the provided email
       const otpData = await sendOtp(form.email);
       if (otpData.success) {
+        // Navigate to OTP input page with email and name in router state
         navigate("/otpInput", {
           state: { email: form.email, name: form.name },
         });

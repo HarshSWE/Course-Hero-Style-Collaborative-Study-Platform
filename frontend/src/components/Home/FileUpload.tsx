@@ -29,6 +29,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
 
   const viewerRef = useRef<HTMLDivElement>(null);
 
+  // Handle file selection from dropzone
   const handleFileChange = (file: File) => {
     const newFile: UploadedFile = {
       id: crypto.randomUUID(),
@@ -48,10 +49,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
     setFiles([]);
   };
 
+  // Toggle expand/collapse of course/school inputs
   const toggleExpand = (id: string) => {
     setExpandedIndex((prev) => (prev === id ? null : id));
   };
 
+  // Update course or school value for a file
   const handleInputChange = (
     id: string,
     field: "course" | "school",
@@ -62,11 +65,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
     );
   };
 
+  // Share/upload files to backend after validation
   const handleShareClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
     if (files.length === 0) return;
-
+    // Validate required fields for each file
     for (let i = 0; i < files.length; i++) {
       const { course, school } = files[i];
       if (!course || !school) {
@@ -109,6 +113,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
     }
   };
 
+  // Initialize dropzone config
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: (acceptedFiles) => {
       acceptedFiles.forEach((file) => handleFileChange(file));
@@ -160,6 +165,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
     return new Blob([pdfBytes], { type: "application/pdf" });
   };
 
+  // Initialize WebViewer when a file is being edited
   useEffect(() => {
     if (!editingFile || !viewerRef.current) return;
 
@@ -228,26 +234,27 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
 
   return (
     <div className="w-full min-h-screen flex items-center justify-center">
+      {/* Dropzone container */}
+
       <div
         {...getRootProps()}
         className="relative w-[90%] max-w-[1200px] h-[650px] bg-white border-2 border-dashed border-gray-300 rounded-2xl p-12 shadow-lg hover:border-blue-500 transition overflow-y-auto"
       >
+        {/* Invisible file input hooked to dropzone */}
         <input {...getInputProps()} multiple />
-
         <button
           onClick={handleShareClick}
           className="absolute top-4 left-4 text-gray-500 hover:text-gray-700"
         >
           Share
         </button>
-
         <button
           onClick={clearAllFiles}
           className="absolute top-4 right-4 text-gray-500 hover:text-red-600"
         >
           Clear All
         </button>
-
+        {/*Success notification for file sharing */}
         <AnimatePresence>
           {shared && (
             <motion.div
@@ -263,7 +270,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
             </motion.div>
           )}
         </AnimatePresence>
-
+        {/* Error notification */}
         <AnimatePresence>
           {errorMessage && (
             <motion.div
@@ -280,7 +287,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
           )}
         </AnimatePresence>
 
+        {/* Upload instructions or list of uploaded files */}
         <div className="w-full h-full flex flex-col items-center justify-start text-center">
+          {/* If no files uploaded */}
           {files.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full w-full p-8 cursor-pointer transition">
               <UploadFileIcon style={{ fontSize: 64, color: "#1e40af" }} />
@@ -289,6 +298,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
               </p>
             </div>
           ) : (
+            // If files exist, show file cards
             <div className="mt-6 w-full flex flex-wrap gap-x-4 gap-y-6 justify-start items-start">
               {files.map(({ id, file, course, school }, index) => {
                 const fileUrl = URL.createObjectURL(file);
@@ -296,6 +306,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                 const isExpanded = expandedIndex === id;
 
                 return (
+                  // Individual file card
                   <div
                     key={index}
                     className="relative flex flex-col items-center bg-gray-50 rounded-lg p-4 shadow-md text-center w-[140px] min-h-[220px] overflow-hidden"
@@ -311,6 +322,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                       <DeleteIcon style={{ fontSize: 12 }} />
                     </IconButton>
 
+                    {/* Edit/annotate file button */}
                     <IconButton
                       onClick={async (e) => {
                         e.stopPropagation();
@@ -336,6 +348,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                       <EditIcon style={{ fontSize: 12 }} />
                     </IconButton>
 
+                    {/* Toggle add course/school details */}
                     <IconButton
                       onClick={(e) => {
                         e.stopPropagation();
@@ -347,6 +360,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                       <AddIcon style={{ fontSize: 13 }} />
                     </IconButton>
 
+                    {/*If image file, show image preview */}
                     {isImage ? (
                       <div className="flex flex-col items-center pt-6">
                         <img
@@ -364,6 +378,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                         </a>
                       </div>
                     ) : (
+                      // Otherwise show PDF icon
                       <div className="flex flex-col items-center justify-center pt-6">
                         <div className="w-[80px] h-[108px] flex items-center justify-center bg-white border rounded text-4xl">
                           📄
@@ -383,6 +398,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
                       {file.name}
                     </p>
 
+                    {/* Expanded input fields for course and school for a file */}
                     {isExpanded && (
                       <div
                         className="mt-2 w-full flex flex-col gap-2"
@@ -416,6 +432,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ inlineMode = false }) => {
         </div>
       </div>
 
+      {/* WebViewer overlay modal when editing a file */}
       {editingFile && (
         <div
           className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"

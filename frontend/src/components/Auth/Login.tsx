@@ -10,7 +10,6 @@ const Login = () => {
   const { refreshProfilePicture } = useProfileImage();
   const { refreshNotifications, refreshNotificationsCount } =
     useNotifications();
-
   const { refreshUser } = useUser();
 
   const navigate = useNavigate();

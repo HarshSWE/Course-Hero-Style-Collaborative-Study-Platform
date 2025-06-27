@@ -3,7 +3,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import CommentSection from "../Comments/CommentSection";
 import ChatBotModal from "./ChatBotModal";
-import { extractContentFromFile } from "../extractContentFromFile";
+import { extractContentFromFile } from "../Utils/extractContentFromFile";
 
 type Notification = {
   _id: string;
@@ -36,6 +36,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
   const filename = fileURL?.split("/").pop() || "";
   const [extractedText, setExtractedText] = useState<string>("");
 
+  // Effect to extract text from file whenever a new fileURL is provided
   useEffect(() => {
     if (!fileURL) return;
 
@@ -55,8 +56,11 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
 
   return (
     <>
+      {/* Modal background overlay */}
       <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
+        {/* Modal content */}
         <div className="bg-white w-[1300px] h-[600px] rounded-lg shadow-lg flex overflow-hidden relative">
+          {/* Left pane: file preview */}
           <div className="w-1/2 p-6 border-r border-gray-300 overflow-auto">
             <h2 className="text-xl font-semibold mb-4">File Preview</h2>
             {filename.endsWith(".pdf") ? (
@@ -83,7 +87,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
               </div>
             )}
           </div>
-
+          {/* Right pane: comment section */}
           <div className="w-1/2 p-6 overflow-auto flex flex-col">
             <CommentSection
               filename={filename}
@@ -101,7 +105,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
           </button>
         </div>
       </div>
-
+      {/* Embedded chatbot modal — always rendered, fed with extracted file content */}
       <ChatBotModal content={extractedText} onClose={() => {}} />
     </>
   );

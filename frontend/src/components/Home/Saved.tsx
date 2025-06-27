@@ -1,15 +1,15 @@
 import { useEffect, useState, useRef } from "react";
 import IconButton from "@mui/material/IconButton";
-import ConfirmDeleteModal from "./Modals/ConfirmDeleteModal";
-import CommentsModal from "./Modals/CommentsModal";
-import { useNotifications } from "./ContextProviders/NotificationsContext";
+import ConfirmDeleteModal from "../Modals/ConfirmDeleteModal";
+import CommentsModal from "../Modals/CommentsModal";
+import { useNotifications } from "../ContextProviders/NotificationsContext";
 import AddIcon from "@mui/icons-material/Add";
-import CreateFolderModal from "./Modals/CreateFolderModal";
-import AddToFolderDropdown from "./AddToFolderDropdown";
+import CreateFolderModal from "../Modals/CreateFolderModal";
+import AddToFolderDropdown from "../Modals/AddToFolderDropdown";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
-import { useFolderContext } from "./ContextProviders/FolderContext";
-import FileCard from "./FileCard";
-import useClickOutside from "./Hooks/useClickOutside";
+import { useFolderContext } from "../ContextProviders/FolderContext";
+import FileCard from "../ContainerCards/FileCard";
+import useClickOutside from "../Hooks/useClickOutside";
 
 interface File {
   _id: string;
@@ -17,11 +17,6 @@ interface File {
   filename: string;
   course: string;
   school: string;
-}
-
-interface Folder {
-  _id: string;
-  name: string;
 }
 
 const Saved = () => {
@@ -50,6 +45,7 @@ const Saved = () => {
     fetchFolders();
   }, []);
 
+  // Custom hook that closes the folder dropdown if a click occurs outside it
   useClickOutside(
     dropdownRef,
     () => {
@@ -144,6 +140,7 @@ const Saved = () => {
     }
   };
 
+  // Filter bookmarked files by search term (case-insensitive match on originalname or filename)
   const filteredFiles = bookmarkedFiles.filter((file) => {
     const name = file?.originalname?.toLowerCase() || "";
     const filename = file?.filename?.toLowerCase() || "";
@@ -177,6 +174,7 @@ const Saved = () => {
           className="border border-gray-300 rounded-md px-3 py-1 text-sm w-48 focus:outline-none focus:ring-0 hover:border-black"
         />
       </div>
+      {/* Grid displaying bookmarked files or "no files" message */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
         {bookmarkedFiles.length === 0 ? (
           <div className="col-span-full text-center text-gray-500">
@@ -192,6 +190,7 @@ const Saved = () => {
                 key={file._id}
                 className="group relative border border-gray-300 rounded-lg shadow hover:shadow-lg transition cursor-pointer hover:border-black"
               >
+                {/* Dropdown for adding file to folder */}
                 <div
                   ref={folderDropDown === file._id ? dropdownRef : null}
                   className={`absolute transition duration-200 z-20 transform -translate-x-1/2 ${
@@ -220,6 +219,7 @@ const Saved = () => {
                     </IconButton>
                   )}
                 </div>
+                {/* FileCard component to show file info, comment & delete buttons */}
                 <FileCard
                   file={file}
                   fileUrl={fileUrl}
@@ -232,8 +232,10 @@ const Saved = () => {
         )}
       </div>
 
+      {/* Fixed footer showing folder filters */}
       <div className="fixed bottom-0 left-0 w-full border-t border-gray-300 p-4 shadow bg-white z-50">
         <div className="flex flex-wrap gap-4">
+          {/* "All" button resets folder filter */}
           <div
             onClick={() => {
               setSelectedFolderId(null);
@@ -248,6 +250,7 @@ const Saved = () => {
             <FolderOpenIcon className="text-blue-500 w-10 h-10" />
             <span className="text-sm font-medium">All</span>
           </div>
+          {/* Buttons for each folder to filter files */}
           {folders.length > 0 &&
             folders.map((folder) => (
               <div
@@ -273,14 +276,14 @@ const Saved = () => {
             ))}
         </div>
       </div>
-
+      {/* Modal to create a new folder */}
       {showCreateFolderModal && (
         <CreateFolderModal
           isOpen={showCreateFolderModal}
           onClose={() => setShowCreateFolderModal(false)}
         />
       )}
-
+      {/* Modal to confirm file deletion */}
       {showModal && fileToDelete && (
         <ConfirmDeleteModal
           isOpen={showModal}
@@ -291,6 +294,7 @@ const Saved = () => {
         />
       )}
 
+      {/* Comments modal for currently selected file */}
       {activeFileForComments && (
         <CommentsModal
           isOpen={true}

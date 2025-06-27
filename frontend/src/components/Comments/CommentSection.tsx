@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CommentItem from "./CommentItem";
-import socket from "../socketService";
+import socket from "../Services/socketService";
 import { useNotifications } from "../ContextProviders/NotificationsContext";
 import { useUser } from "../ContextProviders/UserContext";
 
@@ -50,6 +50,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const { notifications, setNotifications, setNotificationsCount } =
     useNotifications();
 
+  // Fetch file ID and user profile picture on mount
   useEffect(() => {
     const init = async () => {
       try {
@@ -68,12 +69,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     init();
   }, [filename]);
 
+  // Register user to socket room on login
   useEffect(() => {
     if (user?._id) {
       socket.emit("register", user?._id);
     }
   }, [user?._id]);
 
+  // Handle real-time comment events from socket: add, delete, update
   useEffect(() => {
     socket.on("receiveComment", (comment) => {
       setComments((prev) => [
@@ -111,10 +114,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     };
   }, []);
 
+  // Fetch comments for file when fileId is available
   useEffect(() => {
     if (fileId) fetchAllComments(fileId);
   }, [fileId]);
 
+  // Smooth-scroll to comment preview on opening via notification
   useEffect(() => {
     if (scrollToPreview && commentReference) {
       console.log("CommentRef", commentReference);
@@ -137,6 +142,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     }
   }, [scrollToPreview, commentReference]);
 
+  // Mark notifications as read when corresponding comment scrolls into view
   useEffect(() => {
     console.log("useEffect triggered. notifications:", notifications);
 
@@ -192,6 +198,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     };
   }, [notifications, comments, setNotifications, setNotificationsCount]);
 
+  // Handle posting a new top-level comment
   const handlePostComment = () => {
     if (newComment.trim() !== "") {
       addComment(newComment);
@@ -226,6 +233,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     }
   };
 
+  // Post new comment (top-level or reply)
   const addComment = async (text: string, parentId: string | null = null) => {
     try {
       if (!fileId || !user?._id || !user.name)
@@ -288,6 +296,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     }
   };
 
+  // Collapse/expand threaded replies for a comment
   const toggleCollapse = (id: string) => {
     setCollapsedIds((prev) => {
       const updated = new Set(prev);
@@ -296,6 +305,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     });
   };
 
+  // Fetch all comments for a given file
   const fetchAllComments = async (fileId: string) => {
     try {
       const response = await fetch(
@@ -323,6 +333,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     }
   };
 
+  // Render comments recursively as nested threads
   const renderComments = (parentId: string | null = null) => {
     return comments
       .filter((comment) => comment.parentId === parentId)

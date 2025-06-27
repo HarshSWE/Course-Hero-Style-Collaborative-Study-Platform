@@ -3,8 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookmark } from "@fortawesome/free-solid-svg-icons";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import InsertCommentIcon from "@mui/icons-material/InsertComment";
-import AddToFolderDropdown from "./AddToFolderDropdown";
-import CommentsModal from "./Modals/CommentsModal";
+import AddToFolderDropdown from "../Modals/AddToFolderDropdown";
+import CommentsModal from "../Modals/CommentsModal";
 
 interface HomeFileCardProps {
   isOpen: boolean;
@@ -41,6 +41,7 @@ const HomeFileCard: React.FC<HomeFileCardProps> = ({
     null
   );
 
+  // Fetch file stats when modal opens and selectedFile changes
   useEffect(() => {
     const fetchStats = async () => {
       if (selectedFile?._id) {
@@ -61,14 +62,10 @@ const HomeFileCard: React.FC<HomeFileCardProps> = ({
     }
   }, [isOpen, selectedFile]);
 
-  useEffect(() => {
-    if (isOpen) {
-      console.log("Bookmarked files:", bookmarkedFiles);
-    }
-  }, [isOpen, bookmarkedFiles]);
-
+  // If modal isn't open or no file is selected, render nothing
   if (!isOpen || !selectedFile) return null;
 
+  // Helper function to pluralize counts
   const pluralize = (count: number, singular: string, plural: string) =>
     count === 1 ? `${count} ${singular}` : `${count} ${plural}`;
 
@@ -89,19 +86,18 @@ const HomeFileCard: React.FC<HomeFileCardProps> = ({
             />
           </div>
         )}
-
         <button
           onClick={() => toggleBookmark(selectedFile._id)}
           className="absolute top-2 left-2 text-2xl text-blue-500"
           title="Bookmark"
         >
+          {/* Filled bookmark if already bookmarked, else regular */}
           {bookmarkedFiles.has(selectedFile._id) ? (
             <FontAwesomeIcon icon={faBookmark} />
           ) : (
             <FontAwesomeIcon icon={farBookmark} />
           )}
         </button>
-
         <button
           onClick={() => setShowComments(true)}
           className="absolute top-2 left-1/2 transform -translate-x-1/2 text-blue-500"
@@ -109,18 +105,15 @@ const HomeFileCard: React.FC<HomeFileCardProps> = ({
         >
           <InsertCommentIcon fontSize="large" />
         </button>
-
         <button
           onClick={onClose}
           className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl"
         >
           &times;
         </button>
-
         <div className="mb-4 mt-8 text-center">
           <h2 className="text-xl font-semibold">{selectedFile.originalname}</h2>
         </div>
-
         <div className="relative flex-1 overflow-hidden">
           {selectedFile.filename.toLowerCase().endsWith(".pdf") ? (
             <iframe
@@ -139,7 +132,6 @@ const HomeFileCard: React.FC<HomeFileCardProps> = ({
           ) : (
             <p>Preview not available for this file type.</p>
           )}
-
           {stats && (
             <>
               <div className="absolute bottom-2 left-4 text-gray-600 text-sm">
@@ -150,7 +142,6 @@ const HomeFileCard: React.FC<HomeFileCardProps> = ({
               </div>
             </>
           )}
-
           {showComments && (
             <div className="absolute inset-0 bg-white bg-opacity-80 overflow-y-auto">
               <CommentsModal

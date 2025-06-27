@@ -12,6 +12,7 @@ import upload from "../middleware/upload.js";
 const router = express.Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+//  Get a user's profile picture URL by their user ID.
 router.get("/profile-url/:userId", async (req, res) => {
   const { userId } = req.params;
 
@@ -31,6 +32,7 @@ router.get("/profile-url/:userId", async (req, res) => {
   }
 });
 
+// Get the authenticated user's profile picture.
 router.get("/profile-picture", authenticateUser, async (req, res) => {
   try {
     const user = await userModel.findById(req.user.id);
@@ -45,6 +47,7 @@ router.get("/profile-picture", authenticateUser, async (req, res) => {
   }
 });
 
+// Upload and update profile picture for the authenticated user.
 router.post(
   "/profile-picture",
   authenticateUser,
@@ -54,8 +57,6 @@ router.post(
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
-
-      console.log("Uploaded profile picture:", req.file.path);
 
       await userModel.findByIdAndUpdate(req.user.id, {
         profilePictureUrl: `http://localhost:5000/uploads/${req.file.filename}`,
@@ -72,6 +73,7 @@ router.post(
   }
 );
 
+// Fetch a user's name by their user ID.
 router.get("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -88,6 +90,7 @@ router.get("/:userId", async (req, res) => {
     res.status(500).json({ message: "Internal server error." });
   }
 });
+// Generate AI-powered engagement insights for a user based on their recent content statistics and save one as a notification.
 
 router.post("/generate-insight/:userId", async (req, res) => {
   const { userId } = req.params;
@@ -157,6 +160,7 @@ ${JSON.stringify(stats, null, 2)}
   }
 });
 
+// Check if a given friendId is in the user’s friends list.
 router.get("/:userId/is-friend/:friendId", async (req, res) => {
   const { userId, friendId } = req.params;
 
@@ -183,6 +187,7 @@ router.get("/:userId/is-friend/:friendId", async (req, res) => {
   }
 });
 
+// Add two users as friends by their respective IDs, ensures neither ID is invalid or the same user, and prevents duplicate friendships.
 router.post("/:recipientId/add-friend/:senderId", async (req, res) => {
   const { recipientId, senderId } = req.params;
 
@@ -216,14 +221,37 @@ router.post("/:recipientId/add-friend/:senderId", async (req, res) => {
     }
 
     recipient.friends.push(senderId);
+    sender.friends.push(recipientId);
+
     await recipient.save();
+    await sender.save();
 
     return res
       .status(200)
-      .json({ message: "Friend added successfully.", recipient });
+      .json({ message: "Friend added successfully.", recipient, sender });
   } catch (error) {
     console.error("Error adding friend:", error);
     return res.status(500).json({ message: "Server error." });
+  }
+});
+
+// Get the list of friends for a given user ID.
+router.get("/:userId/friends", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await userModel
+      .findById(userId)
+      .populate("friends", "name email profilePictureUrl");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.json({ friends: user.friends });
+  } catch (error) {
+    console.error("Error fetching friends:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 

@@ -33,6 +33,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
 
+  // Function to refresh and fetch user data from token and API
   const refreshUser = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -41,6 +42,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     try {
+      // Decode JWT token to extract user ID
       const decoded: DecodedToken = jwtDecode(token);
       console.log("Decoded token:", decoded);
 
@@ -48,6 +50,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!userId) throw new Error("User ID missing in token");
 
+      // Fetch user details from API using the decoded user ID
       const res = await fetch(`http://localhost:5000/user/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -56,7 +59,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!res.ok) throw new Error("Failed to fetch user");
       const data = await res.json();
-      // stores mongoDB _id
       setUser({ _id: decoded.id, name: data.name });
     } catch (err) {
       console.error("Error decoding or fetching user:", err);

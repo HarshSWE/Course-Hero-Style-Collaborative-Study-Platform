@@ -7,6 +7,7 @@ import { authenticateUser } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
+//  Create a new comment or reply on a file. Triggers notifications for parent comment owner (if it's a reply) via sockets.
 router.post("/", async (req, res) => {
   try {
     const {
@@ -18,8 +19,6 @@ router.post("/", async (req, res) => {
       profilePictureUrl,
       netVotes,
     } = req.body;
-
-    console.log(req.body);
 
     if (!fileId || !userId || !content) {
       return res.status(400).json({
@@ -98,6 +97,7 @@ router.post("/", async (req, res) => {
   }
 });
 
+// Soft-delete a comment by marking it as 'deleted: true'
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -119,6 +119,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// Update a comment’s content
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -145,6 +146,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// Fetch all comments for a given file, sorted oldest to newest
 router.get("/all", async (req, res) => {
   const { fileId } = req.query;
 
@@ -168,6 +170,7 @@ router.get("/all", async (req, res) => {
   }
 });
 
+// Upvote or downvote a comment; toggles if same vote already exists
 router.post("/:id/vote", authenticateUser, async (req, res) => {
   const { id } = req.params;
   const { voteType } = req.body;
@@ -179,20 +182,24 @@ router.post("/:id/vote", authenticateUser, async (req, res) => {
     const comment = await commentModel.findById(id);
     if (!comment) return res.status(404).json({ message: "Comment not found" });
 
+    // Check if this user already voted on this comment
     const existingVoteIndex = comment.votes.findIndex(
       (v) => v.userId.toString() === userId.toString()
     );
 
     if (existingVoteIndex !== -1) {
+      // If the same vote is already present — remove it (toggle)
       if (comment.votes[existingVoteIndex].value === value) {
         comment.votes.splice(existingVoteIndex, 1);
       } else {
+        // Else update their vote to the new value
         comment.votes[existingVoteIndex].value = value;
       }
     } else {
+      // New vote, add to votes array
       comment.votes.push({ userId, value });
     }
-
+    // Recalculate netVotes
     comment.netVotes = comment.votes.reduce((sum, v) => sum + v.value, 0);
 
     await comment.save();

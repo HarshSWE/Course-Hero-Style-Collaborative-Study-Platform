@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-// Function to establish a connection to MongoDB
+// Function to establish a connection to MongoDB database
 export const connectDB = async () => {
   try {
     // Connect to MongoDB via connection string in .env file

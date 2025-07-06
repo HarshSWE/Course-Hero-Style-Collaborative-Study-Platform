@@ -22,7 +22,6 @@ interface RenderMessagesProps {
 
 const RenderMessages: React.FC<RenderMessagesProps> = ({ messages }) => {
   return (
-    // Scrollable container for messages
     <div className="flex-1 overflow-y-auto p-4 space-y-4 text-sm bg-white">
       {messages?.length ? (
         messages.map((msg) =>

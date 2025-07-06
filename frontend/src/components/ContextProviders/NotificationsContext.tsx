@@ -27,10 +27,13 @@ type NotificationsContextType = {
   refreshNotificationsCount: () => Promise<void>;
 };
 
+// Create a React context to hold notifications-related state and actions
 const NotificationsContext = createContext<NotificationsContextType | null>(
   null
 );
 
+// Custom hook to access the NotificationsContext
+// Throws an error if called outside of a NotificationsProvider to ensure valid usage.
 export const useNotifications = () => {
   const context = useContext(NotificationsContext);
   if (!context) {

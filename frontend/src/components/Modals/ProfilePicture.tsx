@@ -13,11 +13,15 @@ const ProfilePicture: React.FC = () => {
       const file = e.target.files[0];
       // Use FileReader to convert image file to Base64 string for immediate preview
       const reader = new FileReader();
+
+      // When the FileReader finishes reading the image file,
+      // set the result (a Base64-encoded data URL) as the profile image for immediate preview
       reader.onload = (event) => {
         if (event.target?.result) {
           setImage(event.target.result as string);
         }
       };
+      // Start reading the selected image file as a Base64 data URL
       reader.readAsDataURL(file);
 
       await uploadImage(file);

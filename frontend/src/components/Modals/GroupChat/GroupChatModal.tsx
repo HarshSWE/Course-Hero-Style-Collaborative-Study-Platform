@@ -94,6 +94,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
         setSelectedChatId(chats[0]._id);
       }
 
+      // Fetch the list of unread group chat IDs for the authenticated user from the backend
       const unreadRes = await fetch(
         "http://localhost:5000/group-chats/unread",
         {
@@ -181,6 +182,8 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
     const fetchLastMessages = async () => {
       const token = localStorage.getItem("token");
+
+      // Initialize an object to store the last message for each group chat, keyed by the chat's _id
       const messagesMap: { [key: string]: Message | null } = {};
 
       await Promise.all(
@@ -271,10 +274,12 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
   // Select/unselect friend when adding to group
   const handleToggleFriend = (friendId: string) => {
+    // If the friend is already selected, remove them from the list
     setSelectedFriendIds((prev) =>
       prev.includes(friendId)
         ? prev.filter((id) => id !== friendId)
-        : [...prev, friendId]
+        : // If not selected, add them to the list
+          [...prev, friendId]
     );
   };
 
@@ -291,11 +296,15 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
       );
       const data = await res.json();
 
+      // Find the currently selected group chat based on its ID
       const currentChat = groupChats.find(
         (chat) => chat._id === selectedChatId
       );
+
+      // Extract the list of member IDs from the selected group chat, or an empty array if none
       const memberIds = currentChat?.members.map((m) => m._id) || [];
 
+      // Filter the user's friends to only include those who are not already members of the selected group chat
       const eligibleFriends = data.friends.filter(
         (friend: Friend) => !memberIds.includes(friend._id)
       );
@@ -325,11 +334,15 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
       socket.emit("membersAddedToGroup", {
         chatId: selectedChatId,
         userNames: friends
+          // Filter friends list to get only those whose IDs were selected
           .filter((f) => selectedFriendIds.includes(f._id))
+          // Map those friends to their names for broadcasting
           .map((f) => f.name),
       });
 
+      // Create an array of new member objects with only necessary fields to add to the group chat's members list in local state
       const newMembers = friends
+        // Get selected friends
         .filter((f) => selectedFriendIds.includes(f._id))
         .map((f) => ({
           _id: f._id,
@@ -337,14 +350,18 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
           email: f.email,
         }));
 
+      // Update the group chats state: add new members to the selected group chat’s members array
       setGroupChats((prevGroupChats) =>
         prevGroupChats.map((chat) =>
           chat._id === selectedChatId
-            ? { ...chat, members: [...chat.members, ...newMembers] }
-            : chat
+            ? // Append new members
+              { ...chat, members: [...chat.members, ...newMembers] }
+            : // Leave other group chats unchanged
+              chat
         )
       );
 
+      // Remove newly added friends from the friends list in local state, so they no longer appear in the eligible friends list
       setFriends((prevFriends) =>
         prevFriends.filter((friend) => !selectedFriendIds.includes(friend._id))
       );

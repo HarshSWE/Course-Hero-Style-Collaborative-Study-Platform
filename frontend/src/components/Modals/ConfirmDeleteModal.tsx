@@ -19,6 +19,8 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  // Remove any leading numeric prefix followed by a hyphen from the filename (e.g., "123-file.pdf" → "file.pdf")
+  // If no filename is provided, fallback to the string "this file"
   const cleanedFilename = filename?.replace(/^\d+-/, "") ?? "this file";
 
   return (

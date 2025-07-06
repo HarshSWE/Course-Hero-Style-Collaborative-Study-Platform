@@ -25,6 +25,8 @@ router.post("/send-otp", async (req, res) => {
   try {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Find an existing OTP record by email, and update its code and creation time.
+    // If no record exists, create a new one (upsert: true), and return the updated document (new: true).
     await Otp.findOneAndUpdate(
       { email },
       { code: otpCode, createdAt: new Date() },
@@ -60,6 +62,7 @@ router.post("/verify-otp", async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
+    // Calculate if the OTP has expired by checking if the time difference since creation exceeds 30 minutes (in milliseconds).
     const expired =
       new Date().getTime() - new Date(otpEntry.createdAt).getTime() >
       30 * 60 * 1000;
@@ -112,7 +115,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }

@@ -26,6 +26,7 @@ interface UserContextType {
   refreshUser: () => Promise<void>;
 }
 
+// Create a React context to hold user-related state and actions.
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -77,6 +78,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
+// Custom hook to access the UserContext.
+// Throws an error if called outside of a UserProvider to ensure valid usage.
 export const useUser = (): UserContextType => {
   const context = useContext(UserContext);
   if (!context) throw new Error("useUser must be used within a UserProvider");

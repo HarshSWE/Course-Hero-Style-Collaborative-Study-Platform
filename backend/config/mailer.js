@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Nodemailer transporter configured to use Gmail
+// Gmail configuration for Nodemailer transporter, needed for sending OTPs
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {

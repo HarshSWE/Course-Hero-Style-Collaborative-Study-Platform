@@ -73,7 +73,10 @@ const Home = () => {
 
   // On URL change, open upload panel if upload param exists
   useEffect(() => {
+    // Create a URLSearchParams object to parse the query parameters from the current URL
     const params = new URLSearchParams(location.search);
+
+    // Check if the 'upload' query parameter is set to 'true' in the URL (e.g. ?upload=true)
     const isUploading = params.get("upload") === "true";
     setShowFileUpload(isUploading);
   }, [location]);
@@ -176,7 +179,6 @@ const Home = () => {
   // Socket listener for new group chat messages
   useEffect(() => {
     socket.on("new-group-message", ({ chatId }) => {
-      console.log("New group message received for chat:", chatId);
       fetchUnreadGroupChats();
     });
 
@@ -234,8 +236,6 @@ const Home = () => {
         }
         return newSet;
       });
-
-      console.log(data.message);
     } catch (error) {
       console.error("Bookmark toggle error:", error);
     }

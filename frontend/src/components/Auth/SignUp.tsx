@@ -7,6 +7,7 @@ const SignUp = () => {
 
   const navigate = useNavigate();
 
+  // Updates the corresponding form field state when the user types into an input field
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };

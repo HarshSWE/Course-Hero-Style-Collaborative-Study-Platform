@@ -4,6 +4,7 @@ import { PhotoProvider, PhotoView } from "react-photo-view";
 import CommentSection from "../Comments/CommentSection";
 import ChatBotModal from "./ChatBotModal";
 import { extractContentFromFile } from "../Utils/extractContentFromFile";
+import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 
 type Notification = {
   _id: string;
@@ -70,7 +71,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
                 className="w-full h-[90%] object-contain"
               />
             ) : filename.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-              <PhotoProvider>
+              <PhotoProvider bannerVisible={false}>
                 <PhotoView src={fileURL || ""}>
                   <div className="cursor-zoom-in">
                     <img
@@ -105,7 +106,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
           </button>
         </div>
       </div>
-      {/* Embedded chatbot modal — always rendered, fed with extracted file content */}
+      {/* Embedded chatbot modal, always rendered and fed with extracted file content */}
       <ChatBotModal content={extractedText} onClose={() => {}} />
     </>
   );

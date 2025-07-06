@@ -67,7 +67,7 @@ const GroupChatDialog: React.FC<GroupChatDialogProps> = ({
     }
   };
 
-  // Handle cancel action — closes dialog and resets state
+  // Handle cancel action, closes dialog and resets state
   const handleCancel = () => {
     setShowCreateDialog(false);
     setNewGroupName("");

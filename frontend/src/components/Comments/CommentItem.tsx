@@ -56,12 +56,11 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isFriend, setIsFriend] = useState(true);
   const [hasPendingRequest, setHasPendingRequest] = useState(false);
-
-  const token = localStorage.getItem("token");
-  const { user } = useUser();
   const [friendRequestMessage, setFriendRequestMessage] = useState("");
   const [showFriendRequestMessage, setShowFriendRequestMessage] =
     useState(false);
+  const token = localStorage.getItem("token");
+  const { user } = useUser();
 
   // On hover, check if commenter is a friend and if a friend request is already pending
   useEffect(() => {
@@ -152,7 +151,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
     onToggleCollapse();
   };
 
-  // Handle voting and update local state
+  // Handle voting and update comment net votes state
   const handleVote = async (voteType: "upvote" | "downvote") => {
     if (!token) {
       console.error("User not authenticated");

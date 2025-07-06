@@ -29,7 +29,7 @@ const Recommendations = () => {
   useEffect(() => {
     const fetchRecommendations = async () => {
       try {
-        // Step 1: Fetch user's saved/bookmarked files from backend API
+        // Fetch user's saved/bookmarked files from backend API
         const res = await fetch("http://localhost:5000/bookmarks/all", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -118,6 +118,7 @@ const Recommendations = () => {
           const fileUrl = `http://localhost:5000/uploads/${file.filename}`;
 
           return (
+            // File display for each reccomendation
             <div
               key={file._id}
               className="relative border border-gray-300 rounded-lg shadow hover:shadow-lg transition cursor-pointer hover:border-blue-500"

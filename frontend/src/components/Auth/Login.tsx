@@ -14,10 +14,12 @@ const Login = () => {
 
   const navigate = useNavigate();
 
+  // Updates the corresponding form state field when an input value changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Handles form submission: prevents default behavior, clears any existing error, and calls the login function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -37,6 +39,7 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
+        // Stores the JWT token and user object in localStorage for persistent authentication and session management
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         console.log("LOGIN SUCCESS - TOKEN:", data.token);

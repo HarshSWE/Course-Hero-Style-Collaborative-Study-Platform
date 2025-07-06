@@ -6,7 +6,6 @@ import { fileModel } from "../models/file.model.js";
 const router = express.Router();
 
 // Add a bookmark for a specific file for the authenticated user and increments the file's 'saves' count by 1
-
 router.post("/:fileId", authenticateUser, async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -55,6 +54,7 @@ router.delete("/:fileId", authenticateUser, async (req, res) => {
 
     const deletedBookmark = await bookmarkModel.deleteOne({ userId, fileId });
 
+    // If no bookmark was deleted (meaning it didn't exist), respond with a 404 error.
     if (deletedBookmark.deletedCount === 0) {
       return res.status(404).json({ message: "Bookmark not found" });
     }
@@ -69,6 +69,7 @@ router.delete("/:fileId", authenticateUser, async (req, res) => {
       return res.status(404).json({ message: "File not found" });
     }
 
+    // Ensure the 'saves' count doesn't go below 0 (in case of inconsistencies or extra unbookmarks)
     if (updatedFile.saves < 0) {
       updatedFile.saves = 0;
       await updatedFile.save();

@@ -34,32 +34,6 @@ router.get("/fileId/:filename", async (req, res) => {
   }
 });
 
-// Delete a file record and physical file from disk, only the owner of the file can delete it
-router.delete("/:filename", authenticateUser, async (req, res) => {
-  try {
-    const { filename } = req.params;
-    const fileDoc = await fileModel.findOne({ filename });
-
-    if (!fileDoc) return res.status(404).send("File not found in DB");
-
-    if (fileDoc.userId.toString() !== req.user._id.toString()) {
-      return res.status(403).send("You are not authorized to delete this file");
-    }
-
-    await fileModel.deleteOne({ filename });
-
-    const filePath = path.resolve(fileDoc.path);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-
-    res.status(200).send("File deleted successfully");
-  } catch (error) {
-    console.error("Delete Error:", error);
-    res.status(500).send("Error deleting file");
-  }
-});
-
 // Upload one or multiple files, associating each with course and school data
 router.post(
   "/upload",
@@ -151,6 +125,8 @@ router.get("/search", async (req, res) => {
       return res.status(400).json({ message: "Search query missing" });
     }
 
+    // Perform a case-insensitive search in the 'filename', 'course', and 'school' fields
+    // Return documents where any of these fields partially match the query string
     const results = await fileModel.find({
       $or: [
         { filename: { $regex: query, $options: "i" } },
@@ -190,6 +166,8 @@ router.post("/match", async (req, res) => {
       school: new RegExp(`^${r.school.trim()}$`, "i"),
     }));
 
+    // Query the database for files where the course and school exactly match
+    // (case-insensitive) any of the provided recommendation pairs
     const files = await fileModel.find({ $or: queries });
 
     res.json(files);

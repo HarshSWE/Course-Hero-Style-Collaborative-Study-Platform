@@ -122,6 +122,8 @@ ${JSON.stringify(stats, null, 2)}
       temperature: 0.7,
     });
 
+    // Parse the AI model's response (which is expected to be a JSON string representing an array of insights)
+    // into a usable JavaScript array of insight objects
     const insightsArray = JSON.parse(
       aiResponse.choices[0].message.content.trim()
     );
@@ -132,6 +134,7 @@ ${JSON.stringify(stats, null, 2)}
         .json({ message: "AI response did not contain valid insights." });
     }
 
+    // Select the first generated insight from the array for use as a preview notification
     const previewInsight = insightsArray[0];
     const { text, fileId, commentId } = previewInsight;
 

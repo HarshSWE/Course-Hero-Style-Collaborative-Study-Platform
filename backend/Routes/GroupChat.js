@@ -86,6 +86,8 @@ router.post("/:groupId/add-members", async (req, res) => {
       return res.status(404).json({ error: "Group chat not found" });
     }
 
+    // Create a system message for each newly added user,
+    // announcing their addition to the group chat
     const systemMessages = existingUsers.map((user) => ({
       groupId,
       content: `${user.name} was added to the group.`,
@@ -133,6 +135,7 @@ router.post("/:groupId/messages", upload.array("files"), async (req, res) => {
       return res.status(400).json({ message: "Content or files required." });
     }
 
+    // Generate an array of file URLs from the uploaded files, or an empty array if none exist
     const fileUrls = files?.map((file) => `/uploads/${file.filename}`) || [];
 
     const message = new messageModel({
@@ -150,16 +153,19 @@ router.post("/:groupId/messages", upload.array("files"), async (req, res) => {
       lastUpdated: new Date(),
     });
 
+    // Update the sender's lastReadAt timestamp for this group chat if an entry exists
     await userModel.updateOne(
       { _id: senderId, "groupChatReads.groupChatId": groupId },
       { $set: { "groupChatReads.$.lastReadAt": new Date() } }
     );
 
+    // Check if the sender has a read tracking entry for this group chat
     const senderHasReadEntry = await userModel.findOne({
       _id: senderId,
       "groupChatReads.groupChatId": groupId,
     });
 
+    // If no read tracking entry exists for the sender in this group chat, create one
     if (!senderHasReadEntry) {
       await userModel.updateOne(
         { _id: senderId },
@@ -186,6 +192,7 @@ router.post("/:groupId/messages", upload.array("files"), async (req, res) => {
   }
 });
 
+// Remove a member from a group chat by their user ID
 router.post("/:chatId/remove-member", authenticateUser, async (req, res) => {
   const { chatId } = req.params;
   const { userIdToRemove } = req.body;
@@ -206,6 +213,7 @@ router.post("/:chatId/remove-member", authenticateUser, async (req, res) => {
         .json({ message: "User is not a member of this group." });
     }
 
+    // Remove the specified user from the group's members array by filtering them out
     groupChat.members = groupChat.members.filter(
       (memberId) => memberId.toString() !== userIdToRemove
     );
@@ -250,10 +258,12 @@ router.get("/unread", authenticateUser, async (req, res) => {
     const unreadGroups = [];
     // Check each group for unread messages
     for (const group of groupChats) {
+      // Find the user's last read timestamp entry for this group chat
       const lastReadEntry = user.groupChatReads.find(
         (read) => read.groupChatId.toString() === group._id.toString()
       );
 
+      // If no entry exists, default to the Unix epoch (Jan 1, 1970)
       const lastReadAt = lastReadEntry ? lastReadEntry.lastReadAt : new Date(0);
 
       const latestMessage = await messageModel
@@ -279,6 +289,7 @@ router.post("/:groupId/read", authenticateUser, async (req, res) => {
     const { groupId } = req.params;
     const userId = req.user._id;
 
+    // Check if the user already has a read-tracking entry for the specified group chat
     const existingEntry = await userModel.findOne({
       _id: userId,
       "groupChatReads.groupChatId": groupId,

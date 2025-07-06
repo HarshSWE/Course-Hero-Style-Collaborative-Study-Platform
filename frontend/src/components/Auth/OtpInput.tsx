@@ -9,6 +9,7 @@ const OtpInput: React.FC = () => {
   const [resending, setResending] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
 
+  // Ref to keep track of the individual OTP input elements, allowing programmatic focus control
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ const OtpInput: React.FC = () => {
     e: React.KeyboardEvent<HTMLInputElement>,
     index: number
   ) => {
+    // If Backspace is pressed on an empty input (and not the first one), move focus to the previous input field
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputsRef.current[index - 1]?.focus();
     }
@@ -118,6 +120,9 @@ const OtpInput: React.FC = () => {
       const signupData = await signupResponse.json();
 
       if (signupResponse.ok) {
+        // Store the JWT token in localStorage for authenticated requests
+        localStorage.setItem("token", signupData.token);
+        // redirect the user to the home page after successful signup
         navigate("/");
       } else {
         setError(signupData.message || "Signup failed");

@@ -3,6 +3,7 @@ import SignUp from "./components/Auth/SignUp";
 import Home from "./components/Home/Home";
 import Shared from "./components/Home/Shared";
 import Saved from "./components/Home/Saved";
+import OtpInput from "./components/Auth/OtpInput";
 import { ProfileImageProvider } from "./components/ContextProviders/ProfileImageContext";
 import { FolderProvider } from "./components/ContextProviders/FolderContext";
 import { UserProvider } from "./components/ContextProviders/UserContext";
@@ -22,6 +23,7 @@ function App() {
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/shared" element={<Shared />} />
                 <Route path="/saved" element={<Saved />} />
+                <Route path="/otpInput" element={<OtpInput />} />
               </Routes>
             </Router>
           </NotificationsProvider>

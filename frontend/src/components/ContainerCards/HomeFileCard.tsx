@@ -132,16 +132,7 @@ const HomeFileCard: React.FC<HomeFileCardProps> = ({
           ) : (
             <p>Preview not available for this file type.</p>
           )}
-          {stats && (
-            <>
-              <div className="absolute bottom-2 left-4 text-gray-600 text-sm">
-                {pluralize(stats.saves, "save", "saves")}
-              </div>
-              <div className="absolute bottom-2 right-4 text-gray-600 text-sm">
-                {pluralize(stats.views, "view", "views")}
-              </div>
-            </>
-          )}
+
           {showComments && (
             <div className="absolute inset-0 bg-white bg-opacity-80 overflow-y-auto">
               <CommentsModal
@@ -154,6 +145,16 @@ const HomeFileCard: React.FC<HomeFileCardProps> = ({
           )}
         </div>
       </div>
+      {stats && (
+        <>
+          <div className="absolute bottom-4 left-4 bg-white bg-opacity-70 px-3 py-1 rounded-full text-gray-700 text-sm backdrop-blur-sm shadow-md max-w-max">
+            {pluralize(stats.saves, "save", "saves")}
+          </div>
+          <div className="absolute bottom-4 right-4 bg-white bg-opacity-70 px-3 py-1 rounded-full text-gray-700 text-sm backdrop-blur-sm shadow-md max-w-max">
+            {pluralize(stats.views, "view", "views")}
+          </div>
+        </>
+      )}
     </div>
   );
 };

@@ -19,6 +19,7 @@ export default function useClickOutside(
 
     // Event listener to check if the click target is outside the referenced element
     const listener = (event: MouseEvent) => {
+      // If the ref doesn't exist yet, or the click happened inside the referenced element, do nothing
       if (!ref.current || ref.current.contains(event.target as Node)) {
         return;
       }

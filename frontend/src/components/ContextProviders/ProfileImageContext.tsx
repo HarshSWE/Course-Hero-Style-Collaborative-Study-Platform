@@ -12,10 +12,13 @@ interface ProfileImageContextType {
   refreshProfilePicture: () => Promise<void>;
 }
 
+// Create a React context to hold state and actions related to a user's profile image
 const ProfileImageContext = createContext<ProfileImageContextType | undefined>(
   undefined
 );
 
+// Custom hook to access the ProfileImageContext
+// Throws an error if called outside of a ProfileImageProvider to ensure valid usage.
 export const useProfileImage = () => {
   const context = useContext(ProfileImageContext);
   if (!context) {

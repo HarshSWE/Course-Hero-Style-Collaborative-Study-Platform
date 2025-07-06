@@ -19,6 +19,7 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Handles creation of a new folder
   const handleSave = async () => {
     if (!folderName.trim()) {
       alert("Folder name is required.");

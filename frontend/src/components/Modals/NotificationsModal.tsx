@@ -23,7 +23,7 @@ type NotificationModalProps = {
   setFriendRequests: React.Dispatch<React.SetStateAction<any[]>>;
 };
 
-// Utility component: renders an avatar image or fallback icon
+// Utility component that renders an avatar image or fallback icon
 const AvatarOrIcon: React.FC<{ url?: string }> = ({ url }) =>
   url ? (
     <img src={url} alt="Sender" className="w-8 h-8 rounded-full object-cover" />
@@ -116,7 +116,7 @@ const NotificationsModal: React.FC<NotificationModalProps> = ({
       <div className="p-4 text-gray-500 text-center">{emptyText}</div>
     );
   };
-  // Calculates total count of notifications across all tabs
+  // Calculates total count of notifications across all tabs (replies + insights + friend requests)
   const totalNotificationsCount =
     notifications.length + insights.length + friendRequests.length;
 

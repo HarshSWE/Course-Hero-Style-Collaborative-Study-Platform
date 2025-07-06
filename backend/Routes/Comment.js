@@ -44,8 +44,10 @@ router.post("/", async (req, res) => {
     const io = getIO();
     const userSockets = getUserSockets();
 
+    // If the new comment is a reply (meaning it has a parentId)
     if (parentId) {
       const parentComment = await commentModel.findById(parentId);
+      // If the parent comment exists and the reply is not made by the same user
       if (parentComment && parentComment.userId.toString() !== userId) {
         await notificationModel.create({
           commentReference: newComment._id,
@@ -57,7 +59,10 @@ router.post("/", async (req, res) => {
           preview: content,
         });
 
+        // Get the recipient's active socket ID (if they're online) from the userSockets mapping.
         const recipientSocketId = userSockets[parentComment.userId.toString()];
+
+        // If the recipient is connected via Socket.IO, send them a real-time notification event.
         if (recipientSocketId) {
           io.to(recipientSocketId).emit("notification", {
             message: `${username} replied to your comment.`,

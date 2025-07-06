@@ -122,7 +122,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   // Smooth-scroll to comment preview on opening via notification
   useEffect(() => {
     if (scrollToPreview && commentReference) {
-      console.log("CommentRef", commentReference);
       const element = document.getElementById(`comment-${commentReference}`);
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -144,18 +143,17 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
   // Mark notifications as read when corresponding comment scrolls into view
   useEffect(() => {
-    console.log("useEffect triggered. notifications:", notifications);
-
     if (!notifications || notifications.length === 0) return;
 
-    console.log("Intersection observer effect ran");
-
+    // Set up an IntersectionObserver to track when elements become at least 50% visible
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
+          // If the observed element is intersecting the viewport
           if (entry.isIntersecting) {
             const commentId = entry.target.id;
 
+            // Loop through notifications to find any unread notifications tied to this comment
             notifications.forEach(async (notif) => {
               if (
                 notif.commentReference === commentId &&
@@ -163,6 +161,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
               ) {
                 try {
                   await fetch(
+                    // Mark the notification as read in the backend
                     `http://localhost:5000/notifications/mark-as-read/${notif._id}`,
                     {
                       method: "PATCH",
@@ -190,9 +189,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       }
     );
 
+    // Attach observer to all elements with an `id` attribute
     const commentElements = document.querySelectorAll("[id]");
     commentElements.forEach((el) => observer.observe(el));
 
+    // Clean up observer on unmount or dependency change
     return () => {
       commentElements.forEach((el) => observer.unobserve(el));
     };

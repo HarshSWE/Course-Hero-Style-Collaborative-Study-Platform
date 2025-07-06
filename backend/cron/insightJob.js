@@ -11,6 +11,7 @@ export function startInsightCron() {
     console.log(" Starting daily AI insight generation...");
 
     try {
+      // If there's no active MongoDB connection, establish one using the URI from environment variables.
       if (mongoose.connection.readyState === 0) {
         await mongoose.connect(process.env.MONGO_URI);
       }
@@ -19,6 +20,7 @@ export function startInsightCron() {
 
       const userIds = users.map((u) => u._id.toString());
 
+      // For each user ID, send a POST request to trigger AI insight generation and log the result.
       for (const userId of userIds) {
         try {
           const response = await fetch(

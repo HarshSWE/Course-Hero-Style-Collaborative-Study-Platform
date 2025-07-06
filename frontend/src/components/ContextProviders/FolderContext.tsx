@@ -19,8 +19,11 @@ type FolderContextType = {
   fetchFolders: () => Promise<void>;
 };
 
+// Create a React context to hold folder-related state and actions
 const FolderContext = createContext<FolderContextType | undefined>(undefined);
 
+// Custom hook to access the FolderContext
+// Throws an error if used outside of a FolderProvider to ensure valid usage
 export const useFolderContext = () => {
   const context = useContext(FolderContext);
   if (!context) {

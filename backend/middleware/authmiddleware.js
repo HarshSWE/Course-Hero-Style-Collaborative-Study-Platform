@@ -6,13 +6,19 @@ export const authenticateUser = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
+    // Check if the Authorization header is missing or doesn't start with "Bearer "
+    // This ensures the request includes a valid Bearer token before proceeding
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "No Valid token provided" });
     }
 
+    // Extract the JWT token from the "Authorization" header
     const token = authHeader.split(" ")[1];
 
+    // Verify and decode the token using the secret key to retrieve the payload (including user ID).
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Look up the user in the database by the decoded user ID, excluding the password field.
     const user = await userModel.findById(decoded.id).select("-password");
 
     if (!user) return res.status(401).json({ message: "User not found" });

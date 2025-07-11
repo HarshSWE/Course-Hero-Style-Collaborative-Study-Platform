@@ -24,6 +24,7 @@ interface UserContextType {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   refreshUser: () => Promise<void>;
+  isAuthenticated: () => boolean;
 }
 
 // Create a React context to hold user-related state and actions.
@@ -33,6 +34,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
+
+  const isAuthenticated = () => !!user;
 
   // Function to refresh and fetch user data from token and API
   const refreshUser = useCallback(async () => {
@@ -72,7 +75,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [refreshUser]);
 
   return (
-    <UserContext.Provider value={{ user, setUser, refreshUser }}>
+    <UserContext.Provider
+      value={{ user, setUser, refreshUser, isAuthenticated }}
+    >
       {children}
     </UserContext.Provider>
   );

@@ -9,6 +9,7 @@ import { FolderProvider } from "./components/ContextProviders/FolderContext";
 import { UserProvider } from "./components/ContextProviders/UserContext";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { NotificationsProvider } from "./components/ContextProviders/NotificationsContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -18,12 +19,34 @@ function App() {
           <NotificationsProvider>
             <Router>
               <Routes>
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<SignUp />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<SignUp />} />
-                <Route path="/shared" element={<Shared />} />
-                <Route path="/saved" element={<Saved />} />
                 <Route path="/otpInput" element={<OtpInput />} />
+
+                <Route
+                  path="/home"
+                  element={
+                    <ProtectedRoute>
+                      <Home />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/shared"
+                  element={
+                    <ProtectedRoute>
+                      <Shared />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/saved"
+                  element={
+                    <ProtectedRoute>
+                      <Saved />
+                    </ProtectedRoute>
+                  }
+                />
               </Routes>
             </Router>
           </NotificationsProvider>

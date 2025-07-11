@@ -123,7 +123,7 @@ const OtpInput: React.FC = () => {
         // Store the JWT token in localStorage for authenticated requests
         localStorage.setItem("token", signupData.token);
         // redirect the user to the home page after successful signup
-        navigate("/");
+        navigate("/home");
       } else {
         setError(signupData.message || "Signup failed");
       }

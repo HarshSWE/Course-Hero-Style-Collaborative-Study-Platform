@@ -49,7 +49,7 @@ const Login = () => {
         await refreshNotificationsCount();
         await refreshUser();
 
-        navigate("/");
+        navigate("/home");
       } else {
         setError(data.message || "Login failed");
       }

@@ -43,7 +43,30 @@ npm start
 ```bash
 # From root directory
 cd recommender
-pip install flask flask-cors flask-caching scikit-learn pandas numpy requests
+pip install -r requirements.txt
 python app.py
 ```
 
+Note: For the recommender you need to have redis installed and running locally or remotely. 
+
+- **macOS:**
+
+```bash
+brew install redis
+brew services start redis
+```
+
+- **Ubuntu:**
+
+```bash
+brew install redis
+brew services start redis
+```
+
+- **Windows**
+
+You can install docker desktop and run
+
+```bash
+docker run -p 6379:6379 redis
+```

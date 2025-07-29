@@ -1,6 +1,8 @@
-Flask
+flask
 flask-cors
-pandas
+flask-caching
+redis
 scikit-learn
-requests
+pandas
 numpy
+requests

@@ -1,13 +1,34 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_caching import Cache
+from hashlib import sha256
+import json
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 import requests
-import numpy as np  
 
 app = Flask(__name__)
 CORS(app)
+
+# Configuration for Redis cache
+app.config['CACHE_TYPE'] = 'RedisCache'
+app.config['CACHE_REDIS_HOST'] = 'localhost'  
+app.config['CACHE_REDIS_PORT'] = 6379
+app.config['CACHE_REDIS_DB'] = 0
+app.config['CACHE_DEFAULT_TIMEOUT'] = 300  # cache timeout in seconds
+
+cache = Cache(app)
+
+def generate_cache_key(saved_files):
+    """
+    Generate a consistent hash key for the given saved_files list
+    """
+    # Sort to avoid order affecting hash
+    sorted_files = sorted(saved_files, key=lambda f: (f["course"].lower(), f["school"].lower()))
+    serialized = json.dumps(sorted_files, sort_keys=True)
+    return sha256(serialized.encode()).hexdigest()
 
 def load_file_metadata():
     """
@@ -47,6 +68,15 @@ def recommend_endpoint():
     if not saved_files:
         return jsonify([])
 
+    # Generate a stable hash-based key
+    cache_key = f"recommendation:{generate_cache_key(saved_files)}"
+
+    # Try to get cached result from Redis
+    cached_result = cache.get(cache_key)
+    if cached_result:
+        print("Using cached result from Redis")
+        return jsonify(json.loads(cached_result))
+
     # Build similarity data structures
     df, vectorizer, tfidf_matrix = build_similarity_matrix()
 
@@ -76,7 +106,10 @@ def recommend_endpoint():
             break
     
     # Convert recommendations to JSON-serializable dictionaries
-    recommendations_json = recommendations = [r.to_dict() for r in recommendations]
+    recommendations_json = [r.to_dict() for r in recommendations]
+
+    # Cache the result in Redis (as a JSON string)
+    cache.set(cache_key, json.dumps(recommendations_json))
 
     return jsonify(recommendations_json)
 
